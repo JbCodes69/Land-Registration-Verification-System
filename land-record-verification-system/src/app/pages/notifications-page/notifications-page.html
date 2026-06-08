@@ -1,0 +1,248 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Notifications</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/user-dashboard"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/workflow-selection"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Service Selection
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-status"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Status
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/verification"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Verification
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/notifications"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Notifications
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/payment"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Payments
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ userName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Notifications</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Review application updates, dispute alerts, resolved dispute notices, and payment reminders.
+        </p>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading notifications from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <!-- Summary -->
+      <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Total Notifications</p>
+          <p class="text-2xl font-semibold text-[#1f1f1f]">{{ notifications.length }}</p>
+        </div>
+
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Unread</p>
+          <p class="text-2xl font-semibold text-[#1f1f1f]">{{ unreadCount }}</p>
+        </div>
+
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Filtered View</p>
+          <p class="text-2xl font-semibold text-[#1f1f1f]">{{ filteredNotifications.length }}</p>
+        </div>
+      </section>
+
+      <!-- Filters -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <label for="categoryFilter" class="mb-2 block text-sm font-medium text-gray-700">
+              Notification Category
+            </label>
+            <select
+              id="categoryFilter"
+              [(ngModel)]="selectedCategory"
+              class="w-72 max-w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let category of categoryOptions" [value]="category">
+                {{ category }}
+              </option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            (click)="markAllAsRead()"
+            class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+          >
+            Mark All as Read
+          </button>
+        </div>
+      </section>
+
+      <!-- Notification List -->
+      <section class="bg-white p-6 shadow-sm">
+        <div class="mb-5">
+          <h3 class="text-xl font-semibold text-[#1f1f1f]">Recent Notifications</h3>
+          <p class="mt-1 text-sm text-gray-600">
+            Unread items are highlighted for attention.
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <article
+            *ngFor="let notification of filteredNotifications"
+            class="border px-5 py-5 transition"
+            [ngClass]="notification.isRead
+              ? 'border-black/10 bg-white'
+              : 'border-[#163d3b]/30 bg-[#f7f3ef]'"
+          >
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="max-w-3xl">
+                <div class="mb-3 flex flex-wrap items-center gap-3">
+                  <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    [ngClass]="getCategoryBadgeClass(notification.category)"
+                  >
+                    {{ notification.category }}
+                  </span>
+
+                  <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    [ngClass]="notification.isRead ? 'bg-gray-100 text-gray-700' : 'bg-[#163d3b] text-white'"
+                  >
+                    {{ notification.isRead ? 'Read' : 'Unread' }}
+                  </span>
+                </div>
+
+                <h4 class="text-lg font-semibold text-[#1f1f1f]">
+                  {{ notification.title }}
+                </h4>
+
+                <p class="mt-2 text-sm leading-6 text-gray-700">
+                  {{ notification.message }}
+                </p>
+
+                <div class="mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+                  <div class="border border-black/5 px-4 py-3">
+                    <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Reference</p>
+                    <p class="font-medium text-[#1f1f1f]">{{ notification.reference }}</p>
+                  </div>
+
+                  <div class="border border-black/5 px-4 py-3">
+                    <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Date / Time</p>
+                    <p class="font-medium text-[#1f1f1f]">{{ notification.dateTime }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex min-w-44 flex-col gap-3">
+                <a
+                  [routerLink]="notification.actionRoute"
+                  class="bg-[#163d3b] px-5 py-3 text-center text-sm text-white hover:bg-black transition"
+                >
+                  {{ notification.actionLabel }}
+                </a>
+
+                <button
+                  type="button"
+                  (click)="markAsRead(notification)"
+                  class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+                  [disabled]="notification.isRead"
+                  [ngClass]="notification.isRead ? 'cursor-not-allowed opacity-60' : ''"
+                >
+                  Mark as Read
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <div
+            *ngIf="filteredNotifications.length === 0"
+            class="border border-black/10 px-5 py-8 text-center text-sm text-gray-600"
+          >
+            {{ notifications.length === 0 ? 'No notifications yet.' : 'No notifications found for the selected category.' }}
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

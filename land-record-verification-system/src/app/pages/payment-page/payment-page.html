@@ -1,0 +1,355 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Payments</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/user-dashboard"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/workflow-selection"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Service Selection
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-status"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Status
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/verification"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Verification
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/notifications"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Notifications
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/payment"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Payments
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ userName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 class="text-3xl font-semibold text-[#1f1f1f]">Payment Information</h2>
+            <p class="mt-2 text-sm text-gray-600">
+              Review payment requirements and simulate payment confirmation for land registration and verification services.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            (click)="printPage()"
+            [disabled]="!paymentSummary"
+            class="no-print border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Print Receipt
+          </button>
+        </div>
+      </section>
+
+      <section class="print-section">
+        <h1>Payment Confirmation</h1>
+        <p class="mt-2 text-sm text-gray-600">
+          Secure Web-Based Land Registration and Verification System
+        </p>
+
+        <h2>Receipt Details</h2>
+        <div class="print-grid" *ngIf="paymentSummary as summary; else noPrintablePayment">
+          <div class="print-row"><span class="print-label">Payment Reference</span><span class="print-value">{{ summary.reference }}</span></div>
+          <div class="print-row"><span class="print-label">Service Type</span><span class="print-value">{{ serviceType }}</span></div>
+          <div class="print-row"><span class="print-label">Amount</span><span class="print-value">{{ formatCurrency(summary.amount) }}</span></div>
+          <div class="print-row"><span class="print-label">Payment Method</span><span class="print-value">{{ summary.method }}</span></div>
+          <div class="print-row"><span class="print-label">Payment Status</span><span class="print-value">{{ getPaymentStatusLabel(summary.status) }}</span></div>
+          <div class="print-row"><span class="print-label">Payment Date</span><span class="print-value">{{ summary.date }}</span></div>
+        </div>
+        <ng-template #noPrintablePayment>
+          <p class="print-row">No payment record found.</p>
+        </ng-template>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading payment records from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <!-- Payment Summary -->
+      <section *ngIf="paymentSummary as summary; else noPaymentSummary" class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-semibold text-[#1f1f1f]">Current Payment Summary</h3>
+            <p class="mt-1 text-sm text-gray-600">Latest payment record returned by the backend.</p>
+          </div>
+
+          <span
+            class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+            [ngClass]="getPaymentBadgeClass(summary.status)"
+          >
+            {{ getPaymentStatusLabel(summary.status) }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Payment Reference</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ summary.reference }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Amount</p>
+            <p class="text-base font-semibold text-[#1f1f1f]">{{ formatCurrency(summary.amount) }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Payment Method</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ summary.method }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Payment Date</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ summary.date }}</p>
+          </div>
+        </div>
+      </section>
+
+      <ng-template #noPaymentSummary>
+        <section class="mb-8 bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
+          No payment records found.
+        </section>
+      </ng-template>
+
+      <!-- Payment Creation -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Create Payment Record</h3>
+
+        <div
+          *ngIf="paymentMessage"
+          class="mb-5 rounded-md px-4 py-3 text-sm"
+          [ngClass]="paymentMessageType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+        >
+          {{ paymentMessage }}
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <label for="paymentApplication" class="mb-2 block text-sm font-medium text-gray-700">Application</label>
+            <select
+              id="paymentApplication"
+              [(ngModel)]="selectedApplicationId"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option [ngValue]="null">Select application</option>
+              <option *ngFor="let application of userApplications" [ngValue]="application.application_id">
+                {{ application.application_code }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label for="paymentAmount" class="mb-2 block text-sm font-medium text-gray-700">Amount</label>
+            <input
+              id="paymentAmount"
+              type="number"
+              [(ngModel)]="paymentAmount"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            />
+          </div>
+
+          <div>
+            <label for="paymentMethod" class="mb-2 block text-sm font-medium text-gray-700">Method</label>
+            <select
+              id="paymentMethod"
+              [(ngModel)]="paymentMethod"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="paymentStatus" class="mb-2 block text-sm font-medium text-gray-700">Status</label>
+            <select
+              id="paymentStatus"
+              [(ngModel)]="paymentStatus"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let status of paymentStatuses" [value]="status">
+                {{ getPaymentStatusLabel(status) }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <button
+            type="button"
+            (click)="createPayment()"
+            [disabled]="isSubmittingPayment"
+            class="bg-[#163d3b] px-5 py-3 text-sm text-white hover:bg-black transition"
+          >
+            {{ isSubmittingPayment ? 'Saving...' : 'Save Payment' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <a
+            routerLink="/document-upload"
+            class="text-sm text-gray-700 underline underline-offset-4 hover:text-black"
+          >
+            Back to Document Upload
+          </a>
+
+          <button
+            type="button"
+            (click)="continueToSummary()"
+            class="bg-[#163d3b] px-6 py-3 text-sm text-white hover:bg-black transition"
+          >
+            Continue to Summary
+          </button>
+        </div>
+      </section>
+
+      <!-- Payment History -->
+      <section class="bg-white p-6 shadow-sm">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-semibold text-[#1f1f1f]">Payment History</h3>
+            <p class="mt-1 text-sm text-gray-600">
+              Previous and current payment records for submitted applications.
+            </p>
+          </div>
+
+          <a
+            routerLink="/application-status"
+            class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+          >
+            View Application Status
+          </a>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-black/10 bg-[#f7f3ef] text-xs uppercase tracking-wide text-gray-500">
+                <th class="px-4 py-3 font-semibold">Payment Ref.</th>
+                <th class="px-4 py-3 font-semibold">Amount</th>
+                <th class="px-4 py-3 font-semibold">Method</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold">Date</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="let payment of paymentHistory"
+                class="border-b border-black/5 align-top last:border-0"
+              >
+                <td class="px-4 py-4 font-medium text-[#1f1f1f]">
+                  {{ payment.reference }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ formatCurrency(payment.amount) }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ payment.method }}
+                </td>
+                <td class="px-4 py-4">
+                  <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    [ngClass]="getPaymentBadgeClass(payment.status)"
+                  >
+                    {{ getPaymentStatusLabel(payment.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ payment.date }}
+                </td>
+              </tr>
+
+              <tr *ngIf="paymentHistory.length === 0">
+                <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-600">
+                  No payment records found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

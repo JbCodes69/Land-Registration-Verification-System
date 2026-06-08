@@ -1,0 +1,439 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Application Form</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/user-dashboard"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/workflow-selection"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Service Selection
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-form"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Application Form
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/document-upload"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Document Upload
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-summary"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Summary
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-status"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Status
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ userName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Application Form</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Complete the required details for the selected workflow and proceed to document upload.
+        </p>
+      </section>
+
+      <!-- Message -->
+      <section *ngIf="message" class="mb-6">
+        <div
+          class="rounded-md px-4 py-3 text-sm"
+          [ngClass]="messageType === 'success'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'"
+        >
+          {{ message }}
+        </div>
+      </section>
+
+      <!-- Workflow Info -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Selected Workflow</h3>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Workflow Type</p>
+            <p class="text-base font-medium text-[#1f1f1f]">
+              {{ selectedWorkflowLabel || 'No workflow selected' }}
+            </p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Application Reference</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ applicationReference }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Current Stage</p>
+            <p class="text-base font-medium text-[#1f1f1f]">Data Entry</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Applicant / Party Details -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Applicant / Party Details</h3>
+        <p class="mb-5 text-sm text-gray-600">
+          Enter the main applicant and transaction party information.
+        </p>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.applicantFullName"
+            id="applicant-full-name"
+            [placeholder]="isFieldRequired('applicantFullName') ? 'Applicant Full Name *' : 'Applicant Full Name'"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.phoneNumber"
+            id="applicant-phone-number"
+            placeholder="Phone Number"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="email"
+            [(ngModel)]="applicationForm.emailAddress"
+            id="applicant-email-address"
+            placeholder="Email Address"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.partyName"
+            id="party-name"
+            placeholder="Other Party Name"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <select
+            [(ngModel)]="applicationForm.partyRole"
+            id="party-role"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          >
+            <option value="">Select Party Role</option>
+            <option value="owner">Owner</option>
+            <option value="transferor">Transferor</option>
+            <option value="transferee">Transferee</option>
+            <option value="grantor">Grantor</option>
+            <option value="grantee">Grantee</option>
+            <option value="witness">Witness</option>
+          </select>
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.partyAddress"
+            id="party-address"
+            placeholder="Party Address"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            *ngIf="isTransferWorkflow()"
+            type="text"
+            [(ngModel)]="applicationForm.currentOwner"
+            id="current-owner"
+            placeholder="Current Owner *"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            *ngIf="isTransferWorkflow()"
+            type="text"
+            [(ngModel)]="applicationForm.newOwner"
+            id="new-owner"
+            placeholder="New Owner *"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+        </div>
+      </section>
+
+      <!-- Land Details -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Land Details</h3>
+        <p class="mb-5 text-sm text-gray-600">
+          Provide the land identification and location information.
+        </p>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.propertyLocation"
+            id="property-location"
+            [placeholder]="isFieldRequired('propertyLocation') ? 'Property Location *' : 'Property Location'"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.landSize"
+            id="land-size"
+            [placeholder]="isFieldRequired('landSize') ? 'Land Size *' : 'Land Size'"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.parcelNumber"
+            id="parcel-number"
+            [placeholder]="isFieldRequired('parcelNumber') ? 'Parcel Number *' : 'Parcel Number'"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            *ngIf="isVerificationWorkflow()"
+            type="text"
+            [(ngModel)]="applicationForm.titleNumber"
+            id="title-number"
+            placeholder="Title Number"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.plotNumber"
+            id="plot-number"
+            placeholder="Plot Number"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.sitePlanNumber"
+            id="site-plan-number"
+            placeholder="Site Plan Number"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.landDescription"
+            id="land-description"
+            placeholder="Land Description"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <select
+            *ngIf="isFieldRequired('ownershipType')"
+            [(ngModel)]="applicationForm.ownershipType"
+            id="ownership-type"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          >
+            <option value="">Select Ownership Type *</option>
+            <option value="freehold">Freehold</option>
+            <option value="leasehold">Leasehold</option>
+            <option value="customary">Customary</option>
+            <option value="family-land">Family Land</option>
+            <option value="state-land">State Land</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Instrument Details -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Instrument Details</h3>
+        <p class="mb-5 text-sm text-gray-600">
+          Capture the legal or transactional details of the selected workflow.
+        </p>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <select
+            [(ngModel)]="applicationForm.instrumentType"
+            id="instrument-type"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          >
+            <option value="">Select Nature of Instrument</option>
+            <option value="indenture">Indenture</option>
+            <option value="assignment">Assignment</option>
+            <option value="lease">Lease</option>
+            <option value="consent">Consent</option>
+            <option value="transfer">Transfer</option>
+            <option value="concurrence">Concurrence</option>
+          </select>
+
+          <input
+            type="date"
+            [(ngModel)]="applicationForm.instrumentDate"
+            id="instrument-date"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.ownerNameOnDocument"
+            id="owner-name-on-document"
+            placeholder="Owner Name in Document / Site Plan"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            type="text"
+            [(ngModel)]="applicationForm.taxClearanceNumber"
+            id="tax-clearance-number"
+            placeholder="Tax Clearance Number (if available)"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+        </div>
+      </section>
+
+      <!-- Workflow Specific Details -->
+      <section
+        *ngIf="isTransferWorkflow() || isConsentWorkflow() || isConcurrenceWorkflow()"
+        class="mb-8 bg-white p-6 shadow-sm"
+      >
+        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Workflow Specific Details</h3>
+        <p class="mb-5 text-sm text-gray-600">
+          Complete the details required for the selected service workflow.
+        </p>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <input
+            *ngIf="isTransferWorkflow()"
+            type="text"
+            [(ngModel)]="applicationForm.transferReason"
+            id="transfer-reason"
+            placeholder="Transfer Reason *"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            *ngIf="isConsentWorkflow()"
+            type="text"
+            [(ngModel)]="applicationForm.consentPurpose"
+            id="consent-purpose"
+            placeholder="Consent Purpose *"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+
+          <input
+            *ngIf="isConcurrenceWorkflow()"
+            type="text"
+            [(ngModel)]="applicationForm.concurrencePurpose"
+            id="concurrence-purpose"
+            placeholder="Concurrence Purpose *"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
+          />
+        </div>
+      </section>
+
+      <!-- Declaration -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Declaration</h3>
+
+        <label class="flex items-start gap-3 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            [(ngModel)]="applicationForm.declarationAccepted"
+            id="declaration-accepted"
+            class="mt-1"
+          />
+          <span>
+            I confirm that the information provided in this application is true and complete to the best of my knowledge.
+          </span>
+        </label>
+      </section>
+
+      <!-- Actions -->
+      <section class="bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <a
+            routerLink="/workflow-selection"
+            class="text-sm text-gray-700 underline underline-offset-4 hover:text-black"
+          >
+            Back to Workflow Selection
+          </a>
+
+          <div class="flex gap-3">
+            <button
+              type="button"
+              (click)="resetForm()"
+              [disabled]="isSubmitting"
+              class="border border-black/15 px-6 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+            >
+              Reset
+            </button>
+
+            <button
+              type="button"
+              (click)="saveAndContinue()"
+              [disabled]="isSubmitting"
+              class="bg-[#163d3b] px-6 py-3 text-sm text-white hover:bg-black transition disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {{ isSubmitting ? 'Submitting...' : 'Save and Continue' }}
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

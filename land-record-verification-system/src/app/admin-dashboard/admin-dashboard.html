@@ -1,0 +1,277 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Admin Dashboard</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/admin-dashboard"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/applications"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Applications
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/review"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Review Queue
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/verification"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Verification
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/disputes"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Disputes
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/logs"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Audit Logs
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/payments"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Payments
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ adminName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Administrative Overview</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Manage land registration workflows, application review, verification records, disputes, notifications, and payment monitoring from one central dashboard.
+        </p>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading administrative dashboard data from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <!-- Top Stats -->
+      <section class="mb-8">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div class="bg-white p-6 shadow-sm">
+            <p class="text-sm text-gray-500">Total Applications</p>
+            <h3 class="mt-2 text-3xl font-semibold text-[#1f1f1f]">{{ totalApplications }}</h3>
+            <p class="mt-2 text-xs text-gray-500">Across registration, transfer, concurrence, and consent</p>
+          </div>
+
+          <div class="bg-white p-6 shadow-sm">
+            <p class="text-sm text-gray-500">Pending Review</p>
+            <h3 class="mt-2 text-3xl font-semibold text-yellow-600">{{ pendingReview }}</h3>
+            <p class="mt-2 text-xs text-gray-500">Awaiting validation or admin action</p>
+          </div>
+
+          <div class="bg-white p-6 shadow-sm">
+            <p class="text-sm text-gray-500">Flagged / Disputed</p>
+            <h3 class="mt-2 text-3xl font-semibold text-red-600">{{ flaggedDisputes }}</h3>
+            <p class="mt-2 text-xs text-gray-500">Require special review and status updates</p>
+          </div>
+
+          <div class="bg-white p-6 shadow-sm">
+            <p class="text-sm text-gray-500">Completed Payments</p>
+            <h3 class="mt-2 text-3xl font-semibold text-green-600">{{ completedPayments }}</h3>
+            <p class="mt-2 text-xs text-gray-500">Successful payment simulation records</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Review Queue -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-semibold text-[#1f1f1f]">Recent Applications Awaiting Review</h3>
+            <p class="mt-1 text-sm text-gray-600">
+              Latest submitted applications requiring admin validation and decision.
+            </p>
+          </div>
+
+          <a
+            routerLink="/admin/review"
+            class="bg-[#163d3b] px-4 py-2 text-sm text-white hover:bg-black transition"
+          >
+            Open Review Queue
+          </a>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full border-collapse text-sm">
+            <thead>
+              <tr class="border-b border-black/10 text-left text-gray-700">
+                <th class="px-3 py-3 font-medium">Reference</th>
+                <th class="px-3 py-3 font-medium">Applicant</th>
+                <th class="px-3 py-3 font-medium">Workflow</th>
+                <th class="px-3 py-3 font-medium">Date Submitted</th>
+                <th class="px-3 py-3 font-medium">Status</th>
+                <th class="px-3 py-3 font-medium">Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let application of recentApplications" class="border-b border-black/5">
+                <td class="px-3 py-3">{{ application.reference }}</td>
+                <td class="px-3 py-3">{{ application.applicant }}</td>
+                <td class="px-3 py-3">{{ application.workflow }}</td>
+                <td class="px-3 py-3">{{ application.submittedDate }}</td>
+                <td class="px-3 py-3">
+                  <span class="inline-block px-3 py-1 text-xs" [ngClass]="getStatusBadgeClass(application.status)">
+                    {{ application.status }}
+                  </span>
+                </td>
+                <td class="px-3 py-3">
+                  <a routerLink="/admin/review" class="text-[#163d3b] underline underline-offset-4">Open</a>
+                </td>
+              </tr>
+
+              <tr *ngIf="recentApplications.length === 0">
+                <td colspan="6" class="px-3 py-6 text-center text-sm text-gray-600">
+                  No submitted applications found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Bottom Grid -->
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <!-- Verification Overview -->
+        <section class="bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Verification Overview</h3>
+
+          <div class="grid grid-cols-1 gap-3 text-sm">
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Verified Records</span>
+              <span class="font-semibold">{{ verifiedRecords }}</span>
+            </div>
+
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Already Registered Alerts</span>
+              <span class="font-semibold">{{ alreadyRegisteredAlerts }}</span>
+            </div>
+
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Dispute Caution Results</span>
+              <span class="font-semibold">{{ disputeCautionResults }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Notifications / System Alerts -->
+        <section class="bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">System Alerts</h3>
+
+          <div class="space-y-4 text-sm">
+            <div
+              *ngFor="let alert of systemAlerts; let index = index"
+              class="px-4 py-3"
+              [ngClass]="index === 0
+                ? 'border-l-4 border-yellow-500 bg-yellow-50'
+                : index === 1
+                ? 'border-l-4 border-red-600 bg-red-50'
+                : 'border-l-4 border-green-600 bg-green-50'"
+            >
+              {{ alert }}
+            </div>
+          </div>
+        </section>
+
+        <!-- Audit / Payment Snapshot -->
+        <section class="bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Audit and Payment Snapshot</h3>
+
+          <div class="grid grid-cols-1 gap-3 text-sm">
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Review Log Entries</span>
+              <span class="font-semibold">{{ reviewLogEntries }}</span>
+            </div>
+
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Verification Logs</span>
+              <span class="font-semibold">{{ verificationLogs }}</span>
+            </div>
+
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Pending Payments</span>
+              <span class="font-semibold">{{ pendingPayments }}</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>

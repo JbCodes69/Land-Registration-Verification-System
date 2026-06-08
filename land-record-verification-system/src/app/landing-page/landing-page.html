@@ -1,0 +1,105 @@
+<div
+  id="landing-page-wrapper"
+  class="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-8 py-12"
+  style="background-image: url('assets/bga.jpg');"
+>
+
+  <div
+  id="landing-page-container"
+  class="relative z-10 w-full max-w-5xl rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-xs border border-white/20 shadow-2xl"
+>
+    <div
+      id="landing-page-grid"
+      class="grid grid-cols-1 md:grid-cols-2 min-h-[700px] shadow-sm"
+    >
+      <!-- LEFT SECTION -->
+      <section
+  id="landing-left-panel"
+  class="relative flex flex-col justify-between p-6 md:p-8 bg-black/70 overflow-hidden"
+>
+       
+
+        <!-- Logo -->
+        <div id="landing-logo-block" class="relative z-10">
+          <h1 class="text-[#7ff5d8] text-3xl md:text-4xl font-light tracking-wide">
+            The <span class="font-semibold">{{ abbrev }}</span>
+          </h1>
+        </div>
+
+        <!-- Welcome text -->
+        <div id="landing-hero-block" class="relative z-10">
+          <h2 class="text-[#7ff5d8] text-4xl md:text-6xl leading-[0.95] font-light max-w-xl">
+            {{ welcomeTitle }}
+          </h2>
+        </div>
+
+        <!-- Bottom badge -->
+        <div id="landing-badge-block" class="relative z-10 flex justify-center md:justify-end">
+          <div class="w-16 h-16 rounded-2xl bg-[#2d2d2d] flex items-center justify-center shadow-lg">
+            <span class="text-white text-2xl font-bold">LC.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT SECTION -->
+      <section
+  id="landing-right-panel"
+  class="bg-white/60 flex flex-col justify-between p-8 md:p-10"
+>
+        <div>
+          <!-- Intro text -->
+          <p
+            id="landing-description"
+            class="text-sm text-gray-600 max-w-md leading-relaxed mb-12"
+          >
+            {{ platformDescription }}
+          </p>
+
+          <!-- Action buttons -->
+          <div id="landing-action-buttons" class="flex flex-col space-y-4">
+            <button
+              id="sign-in-btn"
+              type="button"
+              (click)="goToLogin()"
+              class="w-full py-3 px-6 bg-[#1f7b72] text-white rounded-lg text-center font-medium hover:bg-[#165a56] transition duration-300"
+            >
+              Sign In
+            </button>
+
+            <button
+              id="register-btn"
+              type="button"
+              (click)="goToSignup()"
+              class="w-full py-3 px-6 border border-gray-800 rounded-lg text-center font-medium hover:bg-gray-100 transition duration-300"
+            >
+              Register
+            </button>
+          </div>
+
+          <!-- Terms checkbox -->
+          <div
+            id="terms-checkbox-block"
+            class="flex items-start gap-3 text-xs text-gray-600 leading-relaxed mt-6"
+          >
+            <input
+              id="terms-checkbox"
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-gray-400"
+              [checked]="termsAccepted"
+              (change)="onTermsToggle($event)"
+            />
+            <p>
+              By selecting this box, I agree that I have read, understood and agree
+              to be bound by the Terms of Service, Privacy Policy, and acceptable use policy.
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer text -->
+        <div id="landing-footer-text" class="pt-10 text-xs text-gray-500">
+          {{ systemFooterText }}
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

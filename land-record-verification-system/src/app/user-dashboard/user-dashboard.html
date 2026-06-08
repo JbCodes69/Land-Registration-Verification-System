@@ -1,0 +1,325 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">User Dashboard</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/user-dashboard"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/workflow-selection"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Start New Application
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-status"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                My Applications
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/verification"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Land Verification
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/notifications"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Notifications
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/payment"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Payments
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ userName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Welcome Back</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Start a new land service application, track progress, verify records, and monitor dispute-related updates from your dashboard.
+        </p>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading your dashboard data from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <!-- Overview Cards -->
+      <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="bg-white p-5 shadow-sm">
+          <p class="text-sm text-gray-500">Submitted Applications</p>
+          <h3 class="mt-2 text-3xl font-semibold text-[#1f1f1f]">{{ totalApplications }}</h3>
+          <p class="mt-2 text-xs text-gray-500">Across registration, transfer, concurrence, and consent</p>
+        </div>
+
+        <div class="bg-white p-5 shadow-sm">
+          <p class="text-sm text-gray-500">Pending Review</p>
+          <h3 class="mt-2 text-3xl font-semibold text-yellow-600">{{ pendingReview }}</h3>
+          <p class="mt-2 text-xs text-gray-500">Applications still under administrative review</p>
+        </div>
+
+        <div class="bg-white p-5 shadow-sm">
+          <p class="text-sm text-gray-500">Verification Checks</p>
+          <h3 class="mt-2 text-3xl font-semibold text-[#1f1f1f]">{{ totalVerifications }}</h3>
+          <p class="mt-2 text-xs text-gray-500">Previous land verification requests</p>
+        </div>
+
+        <div class="bg-white p-5 shadow-sm">
+          <p class="text-sm text-gray-500">Unread Notifications</p>
+          <h3 class="mt-2 text-3xl font-semibold text-red-600">{{ unreadNotifications }}</h3>
+          <p class="mt-2 text-xs text-gray-500">Status changes, disputes, and reminders</p>
+        </div>
+      </section>
+
+      <!-- Quick Actions -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-semibold text-[#1f1f1f]">Quick Actions</h3>
+            <p class="mt-1 text-sm text-gray-600">
+              Access the most important parts of the system directly from your dashboard.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <a
+            routerLink="/workflow-selection"
+            class="border border-black/10 bg-[#163d3b] px-5 py-5 text-white transition hover:bg-black"
+          >
+            <h4 class="text-lg font-semibold">Start Application</h4>
+            <p class="mt-2 text-sm text-white/80">
+              Begin registration, transfer, concurrence, or consent workflow.
+            </p>
+          </a>
+
+          <a
+            routerLink="/application-status"
+            class="border border-black/10 bg-white px-5 py-5 transition hover:border-[#163d3b] hover:bg-[#f7f3ef]"
+          >
+            <h4 class="text-lg font-semibold text-[#1f1f1f]">Track Applications</h4>
+            <p class="mt-2 text-sm text-gray-600">
+              View submitted records, current status, and review outcomes.
+            </p>
+          </a>
+
+          <a
+            routerLink="/verification"
+            class="border border-black/10 bg-white px-5 py-5 transition hover:border-[#163d3b] hover:bg-[#f7f3ef]"
+          >
+            <h4 class="text-lg font-semibold text-[#1f1f1f]">Verify Land</h4>
+            <p class="mt-2 text-sm text-gray-600">
+              Check whether a land record is registered, flagged, or disputed.
+            </p>
+          </a>
+
+          <a
+            routerLink="/payment"
+            class="border border-black/10 bg-white px-5 py-5 transition hover:border-[#163d3b] hover:bg-[#f7f3ef]"
+          >
+            <h4 class="text-lg font-semibold text-[#1f1f1f]">View Payments</h4>
+            <p class="mt-2 text-sm text-gray-600">
+              Review payment status and receipt-related information.
+            </p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Application Tracking -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-[#1f1f1f]">Recent Applications</h3>
+
+          <a
+            routerLink="/application-status"
+            class="bg-[#163d3b] px-4 py-2 text-sm text-white hover:bg-black transition"
+          >
+            View All
+          </a>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full border-collapse text-sm">
+            <thead>
+              <tr class="border-b border-black/10 text-left text-gray-700">
+                <th class="px-3 py-3 font-medium">Reference</th>
+                <th class="px-3 py-3 font-medium">Workflow</th>
+                <th class="px-3 py-3 font-medium">Date Submitted</th>
+                <th class="px-3 py-3 font-medium">Status</th>
+                <th class="px-3 py-3 font-medium">Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let application of recentApplications" class="border-b border-black/5">
+                <td class="px-3 py-3">{{ application.reference }}</td>
+                <td class="px-3 py-3">{{ application.workflow }}</td>
+                <td class="px-3 py-3">{{ application.submittedDate }}</td>
+                <td class="px-3 py-3">
+                  <span
+                    class="inline-block px-3 py-1 text-xs"
+                    [ngClass]="
+                      application.status === 'Approved'
+                        ? 'bg-green-100 text-green-700'
+                        : application.status === 'Under Review'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : application.status === 'Queried'
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-red-100 text-red-700'
+                    "
+                  >
+                    {{ application.status }}
+                  </span>
+                </td>
+                <td class="px-3 py-3">
+                  <a routerLink="/application-status" class="text-[#163d3b] underline underline-offset-4">View</a>
+                </td>
+              </tr>
+
+              <tr *ngIf="recentApplications.length === 0">
+                <td colspan="5" class="px-3 py-6 text-center text-sm text-gray-600">
+                  No applications submitted yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Bottom Grid -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <!-- Recent Verification Activity -->
+        <section class="bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Recent Verification Activity</h3>
+
+          <div class="space-y-4 text-sm">
+            <div class="border-b border-black/5 pb-3" *ngFor="let item of recentVerifications; let last = last" [class.border-b-0]="last">
+              <p class="font-medium text-[#1f1f1f]">{{ item.record }}</p>
+              <p class="text-gray-500">{{ item.dateTime }}</p>
+              <p class="mt-1 text-xs text-gray-600">{{ item.result }}</p>
+            </div>
+
+            <div *ngIf="recentVerifications.length === 0" class="border border-black/10 px-4 py-6 text-center text-sm text-gray-600">
+              No verification checks yet.
+            </div>
+          </div>
+        </section>
+
+        <!-- Notifications -->
+        <section class="bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Notifications</h3>
+
+          <div class="space-y-4 text-sm">
+            <div
+              *ngFor="let notification of notifications"
+              class="px-4 py-3"
+              [ngClass]="
+                notification.type === 'warning'
+                  ? 'border-l-4 border-yellow-500 bg-yellow-50'
+                  : notification.type === 'success'
+                  ? 'border-l-4 border-green-600 bg-green-50'
+                  : 'border-l-4 border-red-600 bg-red-50'
+              "
+            >
+              {{ notification.message }}
+            </div>
+
+            <div *ngIf="notifications.length === 0" class="border border-black/10 px-4 py-6 text-center text-sm text-gray-600">
+              No notifications yet.
+            </div>
+          </div>
+        </section>
+
+        <!-- Quick Overview -->
+        <section class="bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Quick Overview</h3>
+
+          <div class="grid grid-cols-1 gap-3 text-sm">
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Approved Applications</span>
+              <span class="font-semibold">{{ approvedApplications }}</span>
+            </div>
+
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Pending Payments</span>
+              <span class="font-semibold">{{ pendingPayments }}</span>
+            </div>
+
+            <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+              <span>Dispute Alerts</span>
+              <span class="font-semibold">{{ disputeAlerts }}</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>

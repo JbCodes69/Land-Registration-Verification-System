@@ -1,0 +1,517 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Application Summary</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/user-dashboard"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/workflow-selection"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Workflow Selection
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-form"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Form
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/document-upload"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Document Upload
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-summary"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Application Summary
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-status"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Status
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ userName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 class="text-3xl font-semibold text-[#1f1f1f]">Application Summary</h2>
+            <p class="mt-2 text-sm text-gray-600">
+              Review all entered application details and uploaded document information before final submission.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            (click)="printPage()"
+            class="no-print border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+          >
+            Print Summary
+          </button>
+        </div>
+      </section>
+
+      <section class="print-section">
+        <h1>Application Summary</h1>
+        <p class="mt-2 text-sm text-gray-600">
+          Secure Web-Based Land Registration and Verification System
+        </p>
+
+        <h2>Application Overview</h2>
+        <div class="print-grid">
+          <div class="print-row"><span class="print-label">Application Reference</span><span class="print-value">{{ applicationReference }}</span></div>
+          <div class="print-row"><span class="print-label">Selected Service</span><span class="print-value">{{ selectedWorkflowLabel || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Application Status</span><span class="print-value">{{ applicationStatusName }}</span></div>
+          <div class="print-row"><span class="print-label">Payment Status</span><span class="print-value">{{ currentPayment?.payment_status || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Payment Reference</span><span class="print-value">{{ currentPayment?.payment_reference || 'Not provided' }}</span></div>
+        </div>
+
+        <h2>Applicant Details</h2>
+        <div class="print-grid">
+          <div class="print-row"><span class="print-label">Applicant Name</span><span class="print-value">{{ applicationFormData.applicantFullName || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Phone Number</span><span class="print-value">{{ applicationFormData.phoneNumber || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Email Address</span><span class="print-value">{{ applicationFormData.emailAddress || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Party Name</span><span class="print-value">{{ applicationFormData.partyName || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Party Role</span><span class="print-value">{{ applicationFormData.partyRole || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Party Address</span><span class="print-value">{{ applicationFormData.partyAddress || 'Not provided' }}</span></div>
+        </div>
+
+        <h2>Land Details</h2>
+        <div class="print-grid">
+          <div class="print-row"><span class="print-label">Land Location</span><span class="print-value">{{ applicationFormData.propertyLocation || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Parcel Number</span><span class="print-value">{{ applicationFormData.parcelNumber || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Land Size</span><span class="print-value">{{ applicationFormData.landSize || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Plot Number</span><span class="print-value">{{ applicationFormData.plotNumber || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Site Plan Number</span><span class="print-value">{{ applicationFormData.sitePlanNumber || 'Not provided' }}</span></div>
+          <div class="print-row"><span class="print-label">Land Description</span><span class="print-value">{{ applicationFormData.landDescription || 'Not provided' }}</span></div>
+        </div>
+
+        <h2>Uploaded Documents</h2>
+        <ul class="print-list" *ngIf="documentSummaryItems.length > 0; else noPrintableDocuments">
+          <li *ngFor="let item of documentSummaryItems">{{ item.label }}</li>
+        </ul>
+        <ng-template #noPrintableDocuments>
+          <p class="print-row">No uploaded documents found.</p>
+        </ng-template>
+      </section>
+
+      <!-- Message -->
+      <section *ngIf="message" class="mb-6">
+        <div
+          class="rounded-md px-4 py-3 text-sm"
+          [ngClass]="messageType === 'success'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'"
+        >
+          {{ message }}
+        </div>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading latest application summary from the land records server...
+        </div>
+      </section>
+
+      <!-- Application Context -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Application Overview</h3>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Workflow Type</p>
+            <p class="text-base font-medium text-[#1f1f1f]">
+              {{ selectedWorkflowLabel || 'No workflow selected' }}
+            </p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Application Reference</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ applicationReference }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Current Stage</p>
+            <p class="text-base font-medium text-[#1f1f1f]">Summary Review</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Submission Status</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ applicationStatusName }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Applicant / Party Details -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-[#1f1f1f]">Applicant / Party Details</h3>
+          <a
+            routerLink="/application-form"
+            class="text-sm text-[#163d3b] underline underline-offset-4"
+          >
+            Edit
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Applicant Full Name</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.applicantFullName || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Phone Number</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.phoneNumber || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Email Address</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.emailAddress || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Other Party Name</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.partyName || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Party Role</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.partyRole || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Party Address</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.partyAddress || '—' }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Land Details -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-[#1f1f1f]">Land Details</h3>
+          <a
+            routerLink="/application-form"
+            class="text-sm text-[#163d3b] underline underline-offset-4"
+          >
+            Edit
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Property Location</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.propertyLocation || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Land Size</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.landSize || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Parcel Number</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.parcelNumber || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Plot Number</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.plotNumber || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Site Plan Number</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.sitePlanNumber || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Land Description</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.landDescription || '—' }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Instrument Details -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-[#1f1f1f]">Instrument Details</h3>
+          <a
+            routerLink="/application-form"
+            class="text-sm text-[#163d3b] underline underline-offset-4"
+          >
+            Edit
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Nature of Instrument</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.instrumentType || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Instrument Date</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.instrumentDate || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Owner Name in Document</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.ownerNameOnDocument || '—' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Tax Clearance Number</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.taxClearanceNumber || '—' }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Workflow Specific Details -->
+      <section
+        *ngIf="applicationFormData.ownershipType || applicationFormData.currentOwner || applicationFormData.newOwner || applicationFormData.transferReason || applicationFormData.consentPurpose || applicationFormData.concurrencePurpose || applicationFormData.titleNumber"
+        class="mb-8 bg-white p-6 shadow-sm"
+      >
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-[#1f1f1f]">Workflow Specific Details</h3>
+          <a
+            routerLink="/application-form"
+            class="text-sm text-[#163d3b] underline underline-offset-4"
+          >
+            Edit
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
+          <div *ngIf="applicationFormData.ownershipType" class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Ownership Type</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.ownershipType }}</p>
+          </div>
+
+          <div *ngIf="applicationFormData.currentOwner" class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Current Owner</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.currentOwner }}</p>
+          </div>
+
+          <div *ngIf="applicationFormData.newOwner" class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">New Owner</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.newOwner }}</p>
+          </div>
+
+          <div *ngIf="applicationFormData.transferReason" class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Transfer Reason</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.transferReason }}</p>
+          </div>
+
+          <div *ngIf="applicationFormData.consentPurpose" class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Consent Purpose</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.consentPurpose }}</p>
+          </div>
+
+          <div *ngIf="applicationFormData.concurrencePurpose" class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Concurrence Purpose</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.concurrencePurpose }}</p>
+          </div>
+
+          <div *ngIf="applicationFormData.titleNumber" class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Title Number</p>
+            <p class="font-medium text-[#1f1f1f]">{{ applicationFormData.titleNumber }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Uploaded Documents -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-[#1f1f1f]">Uploaded Documents</h3>
+          <a
+            routerLink="/document-upload"
+            class="text-sm text-[#163d3b] underline underline-offset-4"
+          >
+            Edit
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
+          <div class="border border-black/5 px-4 py-3" *ngFor="let item of documentSummaryItems">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">{{ item.label }}</p>
+            <img
+              *ngIf="item.isImage && item.fileUrl; else documentSummaryLink"
+              [src]="item.fileUrl"
+              [alt]="item.label"
+              class="mb-3 h-28 w-full border border-black/10 object-cover"
+            />
+            <ng-template #documentSummaryLink>
+              <a
+                *ngIf="item.fileUrl"
+                [href]="item.fileUrl"
+                target="_blank"
+                rel="noopener"
+                class="font-medium text-[#163d3b] underline underline-offset-4"
+              >
+                View Document
+              </a>
+            </ng-template>
+            <p class="mt-2 font-medium text-[#1f1f1f]">{{ item.value || 'Not provided' }}</p>
+          </div>
+
+          <div *ngIf="documentSummaryItems.length === 0" class="border border-black/10 px-4 py-6 text-center text-sm text-gray-600 md:col-span-2">
+            No uploaded documents found.
+          </div>
+        </div>
+      </section>
+
+      <!-- Payment Information -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Payment Information</h3>
+
+        <div *ngIf="currentPayment; else noPaymentRecord" class="grid grid-cols-1 gap-4 md:grid-cols-2 text-sm">
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Payment Reference</p>
+            <p class="font-medium text-[#1f1f1f]">{{ currentPayment.payment_reference || 'Not provided' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Payment Status</p>
+            <p class="font-medium text-[#1f1f1f]">{{ currentPayment.payment_status || 'Not provided' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Amount</p>
+            <p class="font-medium text-[#1f1f1f]">{{ currentPayment.amount || 'Not provided' }}</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Method</p>
+            <p class="font-medium text-[#1f1f1f]">{{ currentPayment.payment_method || 'Not provided' }}</p>
+          </div>
+        </div>
+
+        <ng-template #noPaymentRecord>
+          <div class="border border-black/10 px-4 py-6 text-center text-sm text-gray-600">
+            No payment record found.
+          </div>
+        </ng-template>
+      </section>
+
+      <!-- Summary Status -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Submission Readiness</h3>
+
+        <div class="grid grid-cols-1 gap-3 text-sm">
+          <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+            <span>Workflow Selected</span>
+            <span class="font-semibold">{{ selectedWorkflowLabel ? 'Complete' : 'Missing' }}</span>
+          </div>
+
+          <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+            <span>Application Form Details</span>
+            <span class="font-semibold">{{ hasApplicationData ? 'Complete' : 'Missing' }}</span>
+          </div>
+
+          <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+            <span>Document Upload Details</span>
+            <span class="font-semibold">{{ hasRequiredDocumentData() ? 'Complete' : 'Missing' }}</span>
+          </div>
+
+          <div class="flex items-center justify-between border border-black/5 px-4 py-3">
+            <span>Final Submission Status</span>
+            <span class="font-semibold">{{ isReadyForSubmission() ? 'Ready' : 'Not Ready' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <a
+            routerLink="/payment"
+            class="text-sm text-gray-700 underline underline-offset-4 hover:text-black"
+          >
+            Back to Payment
+          </a>
+
+          <div class="flex gap-3">
+            <button
+              type="button"
+              (click)="saveDraft()"
+              class="border border-black/15 px-6 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+            >
+              Save Draft
+            </button>
+
+            <button
+              type="button"
+              (click)="submitApplication()"
+              class="bg-[#163d3b] px-6 py-3 text-sm text-white hover:bg-black transition"
+            >
+              Final Submit
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+

@@ -1,0 +1,288 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Application Status</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/user-dashboard"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/workflow-selection"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Service Selection
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-form"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Form
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/document-upload"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Document Upload
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-status"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Application Status
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/verification"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Verification
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/notifications"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Notifications
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/payment"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Payments
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ userName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Application Status</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Track submitted land registration, transfer, concurrence, and consent applications.
+        </p>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading your applications from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <!-- Current Application Summary -->
+      <section *ngIf="currentApplication as application; else noCurrentApplication" class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-semibold text-[#1f1f1f]">Current Application</h3>
+            <p class="mt-1 text-sm text-gray-600">
+              Latest submitted request and review position.
+            </p>
+          </div>
+
+          <a
+            routerLink="/payment"
+            class="bg-[#163d3b] px-5 py-3 text-sm text-white hover:bg-black transition"
+          >
+            View Payment
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Application Reference</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ application.reference }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Workflow Type</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ application.workflowType }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Date Submitted</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ application.dateSubmitted }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Current Status</p>
+            <span
+              class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+              [ngClass]="getStatusBadgeClass(application.currentStatus)"
+            >
+              {{ application.currentStatus }}
+            </span>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Payment Status</p>
+            <span
+              class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+              [ngClass]="getPaymentBadgeClass(application.paymentStatus)"
+            >
+              {{ application.paymentStatus }}
+            </span>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Next Action</p>
+            <p class="text-base font-medium text-[#1f1f1f]">
+              {{ application.paymentStatus === 'Pending' ? 'Complete payment review' : 'Await admin update' }}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <ng-template #noCurrentApplication>
+        <section class="mb-8 bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
+          No applications submitted yet.
+        </section>
+      </ng-template>
+
+      <!-- Admin Remark -->
+      <section *ngIf="currentApplication as application" class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Admin Remark</h3>
+
+        <div class="border-l-4 border-[#163d3b] bg-[#f6f1eb] px-5 py-4">
+          <p class="text-sm leading-6 text-gray-700">{{ application.adminRemark }}</p>
+        </div>
+      </section>
+
+      <!-- Recent Applications Table -->
+      <section class="bg-white p-6 shadow-sm">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-semibold text-[#1f1f1f]">Recent Applications</h3>
+            <p class="mt-1 text-sm text-gray-600">
+              Summary of your recent land service requests.
+            </p>
+          </div>
+
+          <a
+            routerLink="/workflow-selection"
+            class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+          >
+            Start New Application
+          </a>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-black/10 bg-[#f7f3ef] text-xs uppercase tracking-wide text-gray-500">
+                <th class="px-4 py-3 font-semibold">Reference</th>
+                <th class="px-4 py-3 font-semibold">Workflow Type</th>
+                <th class="px-4 py-3 font-semibold">Date Submitted</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold">Admin Remark</th>
+                <th class="px-4 py-3 font-semibold">Payment</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="let application of recentApplications"
+                class="border-b border-black/5 align-top last:border-0"
+              >
+                <td class="px-4 py-4 font-medium text-[#1f1f1f]">
+                  {{ application.reference }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ application.workflowType }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ application.dateSubmitted }}
+                </td>
+                <td class="px-4 py-4">
+                  <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    [ngClass]="getStatusBadgeClass(application.currentStatus)"
+                  >
+                    {{ application.currentStatus }}
+                  </span>
+                </td>
+                <td class="max-w-xs px-4 py-4 text-gray-700">
+                  {{ application.adminRemark }}
+                </td>
+                <td class="px-4 py-4">
+                  <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    [ngClass]="getPaymentBadgeClass(application.paymentStatus)"
+                  >
+                    {{ application.paymentStatus }}
+                  </span>
+                </td>
+              </tr>
+
+              <tr *ngIf="recentApplications.length === 0">
+                <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-600">
+                  No applications submitted yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

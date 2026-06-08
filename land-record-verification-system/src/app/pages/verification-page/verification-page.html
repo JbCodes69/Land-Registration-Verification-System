@@ -1,0 +1,434 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Land Verification</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/user-dashboard"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/workflow-selection"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Service Selection
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-status"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Status
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/verification"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Verification
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/notifications"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Notifications
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/payment"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Payments
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ userName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Verify Land Record</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Search land records by parcel number, plot number, location, or registered owner before starting or completing a land service request.
+        </p>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading land records from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <!-- Search and Filters -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Search Criteria</h3>
+
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+          <div class="lg:col-span-2">
+            <label for="searchTerm" class="mb-2 block text-sm font-medium text-gray-700">
+              Parcel, plot, location, or owner
+            </label>
+            <input
+              id="searchTerm"
+              type="text"
+              [(ngModel)]="searchTerm"
+              placeholder="Search by parcel number, plot number, location, or owner"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            />
+          </div>
+
+          <div>
+            <label for="statusFilter" class="mb-2 block text-sm font-medium text-gray-700">
+              Verification Status
+            </label>
+            <select
+              id="statusFilter"
+              [(ngModel)]="selectedStatus"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let status of statusOptions" [value]="status">
+                {{ status }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label for="workflowFilter" class="mb-2 block text-sm font-medium text-gray-700">
+              Workflow Source
+            </label>
+            <select
+              id="workflowFilter"
+              [(ngModel)]="selectedWorkflow"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let workflow of workflowOptions" [value]="workflow">
+                {{ workflow }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-4">
+          <p class="text-sm text-gray-600">
+            {{ filteredLandRecords.length }} record(s) found
+          </p>
+
+          <button
+            type="button"
+            (click)="clearFilters()"
+            class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </section>
+
+      <!-- Verification Results -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-semibold text-[#1f1f1f]">Verification Results</h3>
+            <p class="mt-1 text-sm text-gray-600">
+              Results are shown for applicant guidance until official backend verification is connected.
+            </p>
+          </div>
+
+          <a
+            routerLink="/workflow-selection"
+            class="bg-[#163d3b] px-5 py-3 text-sm text-white hover:bg-black transition"
+          >
+            Start Service
+          </a>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-black/10 bg-[#f7f3ef] text-xs uppercase tracking-wide text-gray-500">
+                <th class="px-4 py-3 font-semibold">Parcel Number</th>
+                <th class="px-4 py-3 font-semibold">Plot Number</th>
+                <th class="px-4 py-3 font-semibold">Location</th>
+                <th class="px-4 py-3 font-semibold">Registered Owner</th>
+                <th class="px-4 py-3 font-semibold">Workflow</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold">Details</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="let record of filteredLandRecords"
+                class="border-b border-black/5 align-top last:border-0"
+              >
+                <td class="px-4 py-4 font-medium text-[#1f1f1f]">
+                  {{ maskParcelNumber(record.parcelNumber) }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ record.plotNumber }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ record.location }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ record.registeredOwner }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ record.workflowSource }}
+                </td>
+                <td class="px-4 py-4">
+                  <span
+                    class="inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold"
+                    [ngClass]="getStatusBadgeClass(record.status)"
+                  >
+                    {{ record.status }}
+                  </span>
+                </td>
+                <td class="px-4 py-4">
+                  <button
+                    type="button"
+                    (click)="openRecordDetails(record)"
+                    class="text-sm font-medium text-[#163d3b] underline underline-offset-4 hover:text-black"
+                  >
+                    View details
+                  </button>
+                </td>
+              </tr>
+
+              <tr *ngIf="filteredLandRecords.length === 0">
+                <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-600">
+                  No matching land record found for the selected search criteria.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Record Details Modal -->
+      <section
+        *ngIf="selectedRecord"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      >
+        <div class="print-section">
+          <h1>Land Verification Result</h1>
+          <p class="mt-2 text-sm text-gray-600">
+            Secure Web-Based Land Registration and Verification System
+          </p>
+
+          <h2>Search Details</h2>
+          <div class="print-grid">
+            <div class="print-row"><span class="print-label">Search Term</span><span class="print-value">{{ searchTerm || 'Not provided' }}</span></div>
+            <div class="print-row"><span class="print-label">Status Filter</span><span class="print-value">{{ selectedStatus }}</span></div>
+            <div class="print-row"><span class="print-label">Workflow Filter</span><span class="print-value">{{ selectedWorkflow }}</span></div>
+            <div class="print-row"><span class="print-label">Date</span><span class="print-value">{{ selectedRecord.lastUpdated }}</span></div>
+          </div>
+
+          <h2>Verification Result</h2>
+          <div class="print-grid">
+            <div class="print-row"><span class="print-label">Parcel Number</span><span class="print-value">{{ selectedRecord.parcelNumber }}</span></div>
+            <div class="print-row"><span class="print-label">Plot Number</span><span class="print-value">{{ selectedRecord.plotNumber }}</span></div>
+            <div class="print-row"><span class="print-label">Location</span><span class="print-value">{{ selectedRecord.location }}</span></div>
+            <div class="print-row"><span class="print-label">Registered Owner</span><span class="print-value">{{ selectedRecord.registeredOwner }}</span></div>
+            <div class="print-row"><span class="print-label">Workflow Source</span><span class="print-value">{{ selectedRecord.workflowSource }}</span></div>
+            <div class="print-row"><span class="print-label">Verification Result</span><span class="print-value">{{ selectedRecord.status }}</span></div>
+            <div class="print-row"><span class="print-label">Dispute Status</span><span class="print-value">{{ selectedRecord.disputeStatus }}</span></div>
+            <div class="print-row"><span class="print-label">Payment Reference</span><span class="print-value">{{ selectedRecord.paymentReference }}</span></div>
+          </div>
+
+          <h2>Result Note</h2>
+          <p class="print-row">{{ selectedRecord.verificationNote }}</p>
+        </div>
+
+        <div class="max-h-[90vh] w-full max-w-3xl overflow-y-auto bg-white p-6 shadow-sm">
+          <div class="mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-black/10 pb-4">
+            <div>
+              <h3 class="text-xl font-semibold text-[#1f1f1f]">Land Record Details</h3>
+              <p class="mt-1 text-sm text-gray-600">
+                {{ selectedRecord.parcelNumber }} · {{ selectedRecord.plotNumber }}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              (click)="closeRecordDetails()"
+              class="border border-black/15 px-4 py-2 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+            >
+              Close
+            </button>
+          </div>
+
+          <div class="mb-5 flex justify-end">
+            <button
+              type="button"
+              (click)="printPage()"
+              class="no-print border border-black/15 px-4 py-2 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+            >
+              Print Result
+            </button>
+          </div>
+
+          <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Parcel Number</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.parcelNumber }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Plot Number</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.plotNumber }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Location</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.location }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Current Owner</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.registeredOwner }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Land Use</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.landUse }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Registration Date</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.registrationDate }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Last Updated</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.lastUpdated }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Record Status</p>
+              <span
+                class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                [ngClass]="getStatusBadgeClass(selectedRecord.status)"
+              >
+                {{ selectedRecord.status }}
+              </span>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Payment Reference</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.paymentReference }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Dispute Status</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.disputeStatus }}</p>
+            </div>
+          </div>
+
+          <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="border border-black/10 px-4 py-4">
+              <h4 class="mb-3 text-base font-semibold text-[#1f1f1f]">Previous Ownership</h4>
+              <p class="text-sm text-gray-700">
+                Previous ownership history is not available in this prototype.
+              </p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-4">
+              <h4 class="mb-3 text-base font-semibold text-[#1f1f1f]">Dispute History</h4>
+              <ul class="space-y-2 text-sm text-gray-700">
+                <li *ngFor="let dispute of selectedRecord.disputeHistory" class="border-b border-black/5 pb-2 last:border-0 last:pb-0">
+                  {{ dispute }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="border-l-4 border-[#163d3b] bg-[#f6f1eb] px-5 py-4">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Verification Note</p>
+            <p class="mt-2 text-sm leading-6 text-gray-700">{{ selectedRecord.verificationNote }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Verification Guidance -->
+      <section class="bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Status Meaning</h3>
+
+        <div class="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+          <div class="border border-black/5 px-4 py-3">
+            <p class="font-semibold text-[#1f1f1f]">Verified</p>
+            <p class="mt-1 text-gray-600">The land record has a confirmed registration entry.</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="font-semibold text-[#1f1f1f]">Already Registered</p>
+            <p class="mt-1 text-gray-600">The parcel already exists in the records and may require transfer or consent processing.</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="font-semibold text-[#1f1f1f]">Under Review</p>
+            <p class="mt-1 text-gray-600">A submitted request is still being reviewed by the land office.</p>
+          </div>
+
+          <div class="border border-black/5 px-4 py-3">
+            <p class="font-semibold text-[#1f1f1f]">Disputed / Flagged</p>
+            <p class="mt-1 text-gray-600">The record has a dispute or irregularity and should not proceed without admin clearance.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+

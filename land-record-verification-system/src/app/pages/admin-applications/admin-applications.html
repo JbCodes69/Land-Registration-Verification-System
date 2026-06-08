@@ -1,0 +1,358 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Admin Applications</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/admin-dashboard"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/applications"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Applications
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/review"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Review Queue
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/verification"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Verification
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/disputes"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Disputes
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/logs"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Audit Logs
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/admin/payments"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Payments
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ adminName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Submitted Applications</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          View and filter land registration, transfer, concurrence, and consent applications submitted by applicants.
+        </p>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading submitted applications from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <!-- Summary Cards -->
+      <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Total Applications</p>
+          <p class="text-2xl font-semibold text-[#1f1f1f]">{{ totalApplications }}</p>
+        </div>
+
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Pending Review</p>
+          <p class="text-2xl font-semibold text-amber-700">{{ pendingReviewCount }}</p>
+        </div>
+
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Flagged</p>
+          <p class="text-2xl font-semibold text-red-700">{{ flaggedCount }}</p>
+        </div>
+
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Approved</p>
+          <p class="text-2xl font-semibold text-green-700">{{ completedCount }}</p>
+        </div>
+      </section>
+
+      <!-- Filters -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Application Filters</h3>
+
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+          <div class="lg:col-span-2">
+            <label for="applicationSearch" class="mb-2 block text-sm font-medium text-gray-700">
+              Search reference, applicant, or parcel
+            </label>
+            <input
+              id="applicationSearch"
+              type="text"
+              [(ngModel)]="searchTerm"
+              placeholder="Search reference, applicant, parcel, or officer"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            />
+          </div>
+
+          <div>
+            <label for="workflowFilter" class="mb-2 block text-sm font-medium text-gray-700">
+              Workflow Type
+            </label>
+            <select
+              id="workflowFilter"
+              [(ngModel)]="selectedWorkflow"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let workflow of workflowOptions" [value]="workflow">
+                {{ workflow }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label for="statusFilter" class="mb-2 block text-sm font-medium text-gray-700">
+              Status
+            </label>
+            <select
+              id="statusFilter"
+              [(ngModel)]="selectedStatus"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let status of statusOptions" [value]="status">
+                {{ status }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-4">
+          <p class="text-sm text-gray-600">
+            {{ filteredApplications.length }} application(s) found
+          </p>
+
+          <button
+            type="button"
+            (click)="clearFilters()"
+            class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </section>
+
+      <!-- Review Action -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Review Selected Application</h3>
+
+        <div
+          *ngIf="reviewMessage"
+          class="mb-5 rounded-md px-4 py-3 text-sm"
+          [ngClass]="reviewMessageType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+        >
+          {{ reviewMessage }}
+        </div>
+
+        <div *ngIf="selectedApplicationForReview; else noApplicationSelected" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="border border-black/10 px-4 py-3">
+            <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Selected Application</p>
+            <p class="font-medium text-[#1f1f1f]">{{ selectedApplicationForReview.reference }}</p>
+          </div>
+
+          <div>
+            <label for="reviewStatus" class="mb-2 block text-sm font-medium text-gray-700">Review Status</label>
+            <select
+              id="reviewStatus"
+              [(ngModel)]="selectedReviewStatusId"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option [ngValue]="null">Choose status</option>
+              <option *ngFor="let status of reviewStatusOptions" [ngValue]="status.status_id">
+                {{ status.status_name }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label for="reviewComment" class="mb-2 block text-sm font-medium text-gray-700">Review Comment</label>
+            <input
+              id="reviewComment"
+              type="text"
+              [(ngModel)]="reviewComment"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            />
+          </div>
+
+          <div class="lg:col-span-3">
+            <button
+              type="button"
+              (click)="submitReview()"
+              [disabled]="isSubmittingReview"
+              class="bg-[#163d3b] px-5 py-3 text-sm text-white hover:bg-black transition"
+            >
+              {{ isSubmittingReview ? 'Submitting...' : 'Submit Review' }}
+            </button>
+          </div>
+        </div>
+
+        <ng-template #noApplicationSelected>
+          <div class="border border-black/10 px-5 py-6 text-center text-sm text-gray-600">
+            Select an application from the table below to submit a review.
+          </div>
+        </ng-template>
+      </section>
+
+      <!-- Applications Table -->
+      <section class="bg-white p-6 shadow-sm">
+        <div class="mb-5">
+          <h3 class="text-xl font-semibold text-[#1f1f1f]">All Submitted Applications</h3>
+          <p class="mt-1 text-sm text-gray-600">
+            Use the open action to continue review, verification, or administrative processing.
+          </p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-black/10 bg-[#f7f3ef] text-xs uppercase tracking-wide text-gray-500">
+                <th class="px-4 py-3 font-semibold">Reference</th>
+                <th class="px-4 py-3 font-semibold">Applicant</th>
+                <th class="px-4 py-3 font-semibold">Workflow</th>
+                <th class="px-4 py-3 font-semibold">Parcel</th>
+                <th class="px-4 py-3 font-semibold">Submitted</th>
+                <th class="px-4 py-3 font-semibold">Officer</th>
+                <th class="px-4 py-3 font-semibold">Payment</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold">Action</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="let application of filteredApplications"
+                class="border-b border-black/5 align-top last:border-0"
+              >
+                <td class="px-4 py-4 font-medium text-[#1f1f1f]">
+                  {{ application.reference }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ application.applicant }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ application.workflowType }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ application.parcelNumber }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ application.submittedDate }}
+                </td>
+                <td class="px-4 py-4 text-gray-700">
+                  {{ application.assignedOfficer }}
+                </td>
+                <td class="px-4 py-4">
+                  <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    [ngClass]="getPaymentBadgeClass(application.paymentStatus)"
+                  >
+                    {{ application.paymentStatus }}
+                  </span>
+                </td>
+                <td class="px-4 py-4">
+                  <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    [ngClass]="getStatusBadgeClass(application.status)"
+                  >
+                    {{ application.status }}
+                  </span>
+                </td>
+                <td class="px-4 py-4">
+                  <button
+                    type="button"
+                    (click)="selectApplicationForReview(application)"
+                    class="text-sm font-medium text-[#163d3b] underline underline-offset-4 hover:text-black"
+                  >
+                    Select
+                  </button>
+                </td>
+              </tr>
+
+              <tr *ngIf="filteredApplications.length === 0">
+                <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-600">
+                  No applications match the selected filters.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

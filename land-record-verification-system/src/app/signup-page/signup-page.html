@@ -1,0 +1,189 @@
+<div
+  id="signup-page-wrapper"
+  class="relative min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-8 py-12"
+  style="background-image: url('assets/bga.jpg');"
+>
+  <div id="signup-page-container"  class="relative z-10 w-full max-w-5xl rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-xs border border-white/20 shadow-2xl"
+>
+    <div
+      id="signup-page-grid"
+      class="grid grid-cols-1 md:grid-cols-2 min-h-[300px] shadow-sm"
+    >
+      <!-- Left Section -->
+      <div
+        id="signup-left-panel"
+         class="relative flex flex-col justify-between p-6 md:p-8 bg-black/70 overflow-hidden"
+>
+
+        <!-- Logo -->
+        <div class="relative z-10">
+          <h1 class="text-[#3aded7] text-3xl md:text-4xl font-light">
+            The <span class="font-semibold">{{ abbrev }}</span>
+          </h1>
+        </div>
+
+        <!-- Hero text -->
+        <div class="relative z-10">
+          <h2 class="text-[#3aded7] text-5xl md:text-7xl font-light leading-[0.95] max-w-md">
+            {{ signupWelcomeTitle }}
+          </h2>
+        </div>
+
+        <!-- Badge -->
+        <div class="relative z-10 flex justify-end">
+          <div class="w-16 h-16 rounded-2xl bg-[#2d2d2d] flex items-center justify-center shadow-lg">
+            <span class="text-white text-2xl font-bold">LC.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Section -->
+      <div
+        id="signup-right-panel"
+         class="bg-white/60 flex flex-col justify-between p-8 md:p-10"
+>
+        <div>
+          <h2 class="text-4xl md:text-5xl font-serif text-[#1f1f1f] mb-3">
+            Sign Up
+          </h2>
+
+          <p class="text-sm text-gray-600 max-w-md leading-relaxed mb-8">
+            Create an account to access the land record verification portal securely.
+          </p>
+
+          <!-- Success / error messages -->
+          <p
+            *ngIf="message"
+            class="mb-4 rounded-md px-4 py-3 text-sm"
+            [ngClass]="messageType === 'success'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'"
+          >
+            {{ message }}
+          </p>
+
+          <form class="space-y-1" (submit)="createAccount($event)">
+            <!-- Full name -->
+            <div>
+              <label for="fullName" class="block text-sm text-gray-700 mb-2">Full name *</label>
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                [(ngModel)]="fullName"
+                class="w-full bg-transparent border-0 border-b border-gray-500 focus:outline-none focus:border-black pb-2 text-base"
+              />
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label for="email" class="block text-sm text-gray-700 mb-2">Email address *</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                [(ngModel)]="email"
+                class="w-full bg-transparent border-0 border-b border-gray-500 focus:outline-none focus:border-black pb-2 text-base"
+              />
+            </div>
+
+            <div>
+              <label for="phoneNumber" class="block text-sm text-gray-700 mb-2">Phone number *</label>
+              <input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                [(ngModel)]="phoneNumber"
+                class="w-full bg-transparent border-0 border-b border-gray-500 focus:outline-none focus:border-black pb-2 text-base"
+              />
+            </div>
+
+            <!-- Password -->
+            <div>
+              <label for="password" class="block text-sm text-gray-700 mb-2">Password *</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                [(ngModel)]="password"
+                class="w-full bg-transparent border-0 border-b border-gray-500 focus:outline-none focus:border-black pb-2 text-base"
+              />
+            </div>
+
+            <!-- Confirm password -->
+            <div>
+              <label for="confirmPassword" class="block text-sm text-gray-700 mb-2">
+                Confirm password *
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                [(ngModel)]="confirmPassword"
+                class="w-full bg-transparent border-0 border-b border-gray-500 focus:outline-none focus:border-black pb-2 text-base"
+              />
+            </div>
+
+            <!-- OTP -->
+            <div class="flex items-end gap-3">
+              <div class="flex-1">
+                <label for="otp" class="block text-sm text-gray-700 mb-2">OTP code *</label>
+                <input
+                  id="otp"
+                  name="otp"
+                  type="text"
+                  [(ngModel)]="enteredOtp"
+                  class="w-full bg-transparent border-0 border-b border-gray-500 focus:outline-none focus:border-black pb-2 text-base"
+                />
+              </div>
+
+              <button
+                id="verify-otp-btn"
+                type="button"
+                (click)="verifyOtp()"
+                class="h-11 px-5 bg-[#163d3b] text-white rounded-md hover:bg-black transition"
+              >
+                Verify
+              </button>
+            </div>
+
+            <!-- Generate OTP button -->
+            <div>
+              <button
+                id="generate-otp-btn"
+                type="button"
+                (click)="generateOtp()"
+                class="px-5 py-3 border border-black/15 text-sm text-gray-700 rounded-md hover:bg-black hover:text-white transition"
+              >
+                Generate OTP
+              </button>
+            </div>
+
+            <!-- Bottom actions -->
+            <div class="pt-4 flex items-center justify-between gap-4">
+              <a
+                routerLink="/login"
+                class="text-sm text-gray-700 underline underline-offset-4 hover:text-black"
+              >
+                Already have an account?
+              </a>
+
+              <button
+                id="create-account-btn"
+                type="submit"
+                [disabled]="isSubmitting"
+                class="px-6 py-3 bg-[#163d3b] text-white rounded-md hover:bg-black transition"
+              >
+                {{ isSubmitting ? 'Creating...' : 'Create Account' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="pt-10 text-xs text-gray-500">
+          {{ systemFooterText }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

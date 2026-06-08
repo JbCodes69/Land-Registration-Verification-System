@@ -1,0 +1,152 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Audit Logs</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li><a routerLink="/admin-dashboard" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Dashboard</a></li>
+            <li><a routerLink="/admin/applications" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Applications</a></li>
+            <li><a routerLink="/admin/review" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Review Queue</a></li>
+            <li><a routerLink="/admin/verification" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Verification</a></li>
+            <li><a routerLink="/admin/disputes" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Disputes</a></li>
+            <li><a routerLink="/admin/logs" class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition">Audit Logs</a></li>
+            <li><a routerLink="/admin/payments" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Payments</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ adminName }}</span>
+        </div>
+        <div class="flex flex-col gap-2">
+          <a routerLink="/" class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition">Home</a>
+          <a routerLink="/login" class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition">Logout</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Audit and Activity Logs</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Monitor administrative actions, applicant submissions, verification decisions, dispute updates, and payment activity.
+        </p>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading audit logs from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Successful Actions</p>
+          <p class="text-2xl font-semibold text-green-700">{{ successCount }}</p>
+        </div>
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Warnings</p>
+          <p class="text-2xl font-semibold text-amber-700">{{ warningCount }}</p>
+        </div>
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Failed Actions</p>
+          <p class="text-2xl font-semibold text-red-700">{{ failedCount }}</p>
+        </div>
+      </section>
+
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Log Filters</h3>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+          <div class="lg:col-span-2">
+            <label for="logSearch" class="mb-2 block text-sm font-medium text-gray-700">Search user, action, reference, or log ID</label>
+            <input
+              id="logSearch"
+              type="text"
+              [(ngModel)]="searchTerm"
+              placeholder="Search user, action, module, or reference"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            />
+          </div>
+          <div>
+            <label for="moduleFilter" class="mb-2 block text-sm font-medium text-gray-700">Module</label>
+            <select
+              id="moduleFilter"
+              [(ngModel)]="selectedModule"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let module of moduleOptions" [value]="module">{{ module }}</option>
+            </select>
+          </div>
+          <div>
+            <label for="statusFilter" class="mb-2 block text-sm font-medium text-gray-700">Status</label>
+            <select
+              id="statusFilter"
+              [(ngModel)]="selectedStatus"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-4">
+          <p class="text-sm text-gray-600">{{ filteredLogs.length }} log record(s) found</p>
+          <button type="button" (click)="clearFilters()" class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition">Clear Filters</button>
+        </div>
+      </section>
+
+      <section class="bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Activity Log Table</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-black/10 bg-[#f7f3ef] text-xs uppercase tracking-wide text-gray-500">
+                <th class="px-4 py-3 font-semibold">Log ID</th>
+                <th class="px-4 py-3 font-semibold">User</th>
+                <th class="px-4 py-3 font-semibold">Action</th>
+                <th class="px-4 py-3 font-semibold">Module</th>
+                <th class="px-4 py-3 font-semibold">Reference</th>
+                <th class="px-4 py-3 font-semibold">Date / Time</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of filteredLogs" class="border-b border-black/5 align-top last:border-0">
+                <td class="px-4 py-4 font-medium text-[#1f1f1f]">{{ log.id }}</td>
+                <td class="px-4 py-4 text-gray-700">
+                  <p class="font-medium text-[#1f1f1f]">{{ log.user }}</p>
+                  <p class="mt-1 text-xs text-gray-500">{{ log.role }}</p>
+                </td>
+                <td class="max-w-xs px-4 py-4 text-gray-700">{{ log.action }}</td>
+                <td class="px-4 py-4 text-gray-700">{{ log.module }}</td>
+                <td class="px-4 py-4 text-gray-700">{{ log.reference }}</td>
+                <td class="px-4 py-4 text-gray-700">{{ log.dateTime }}</td>
+                <td class="px-4 py-4">
+                  <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStatusBadgeClass(log.status)">
+                    {{ log.status }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="filteredLogs.length === 0">
+                <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-600">No audit logs match the selected filters.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section></main>
+  </div>
+</div>
+

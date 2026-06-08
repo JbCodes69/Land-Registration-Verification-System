@@ -1,0 +1,89 @@
+/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+
+.print-section {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 18mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-section,
+  .print-section * {
+    visibility: visible !important;
+  }
+
+  .print-section {
+    display: block !important;
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-family: Arial, sans-serif !important;
+  }
+
+  .print-section h1 {
+    margin: 0 0 6px !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+  }
+
+  .print-section h2 {
+    margin: 18px 0 8px !important;
+    border-bottom: 1px solid #d1d5db !important;
+    padding-bottom: 5px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+  }
+
+  .print-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 18px !important;
+  }
+
+  .print-row {
+    break-inside: avoid !important;
+    margin-bottom: 7px !important;
+    font-size: 12px !important;
+  }
+
+  .print-label {
+    display: block !important;
+    color: #4b5563 !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-value {
+    display: block !important;
+    margin-top: 2px !important;
+    color: #111827 !important;
+    font-size: 12px !important;
+  }
+
+  .print-list {
+    margin: 0 !important;
+    padding-left: 18px !important;
+    font-size: 12px !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

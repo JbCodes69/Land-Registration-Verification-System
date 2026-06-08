@@ -1,0 +1,226 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Document Upload</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li>
+              <a
+                routerLink="/user-dashboard"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Dashboard
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/workflow-selection"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Workflow Selection
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-form"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Form
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/document-upload"
+                class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
+              >
+                Document Upload
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-summary"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Summary
+              </a>
+            </li>
+
+            <li>
+              <a
+                routerLink="/application-status"
+                class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
+              >
+                Application Status
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ userName }}</span>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <a
+            routerLink="/"
+            class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
+          >
+            Home
+          </a>
+
+          <a
+            routerLink="/login"
+            class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <!-- Header -->
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Document Upload</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Upload the supporting documents required for the selected workflow and continue to the application summary.
+        </p>
+      </section>
+
+      <!-- Message -->
+      <section *ngIf="message" class="mb-6">
+        <div
+          class="rounded-md px-4 py-3 text-sm"
+          [ngClass]="messageType === 'success'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'"
+        >
+          {{ message }}
+        </div>
+      </section>
+
+      <!-- Workflow Info -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Application Context</h3>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Workflow Type</p>
+            <p class="text-base font-medium text-[#1f1f1f]">
+              {{ selectedWorkflowLabel || 'No workflow selected' }}
+            </p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Application Reference</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ applicationReference }}</p>
+          </div>
+
+          <div class="border border-black/10 px-4 py-4">
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Current Stage</p>
+            <p class="text-base font-medium text-[#1f1f1f]">Document Submission</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Document Categories -->
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Required Document Categories</h3>
+        <p class="mb-5 text-sm text-gray-600">
+          Categories are loaded from the land records backend and used to save document metadata.
+        </p>
+
+        <div *ngIf="isLoadingCategories" class="border border-black/10 bg-[#f6f1eb] px-4 py-4 text-sm text-gray-600">
+          Loading document categories...
+        </div>
+
+        <div *ngIf="!isLoadingCategories && documentRequirementSlots.length === 0" class="border border-black/10 bg-[#f6f1eb] px-4 py-4 text-sm text-gray-600">
+          No documents are required for this workflow by default.
+        </div>
+
+        <div *ngIf="!isLoadingCategories && documentRequirementSlots.length > 0" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div
+            *ngFor="let slot of documentRequirementSlots"
+            class="border border-dashed border-black/20 px-4 py-5"
+          >
+            <label [for]="'document-slot-' + slot.key" class="mb-2 block text-sm font-medium text-[#1f1f1f]">
+              {{ slot.label }} <span *ngIf="slot.required">*</span>
+            </label>
+            <p class="mt-1 text-gray-600">
+              {{ slot.required ? 'Required for the selected workflow.' : 'Optional supporting document.' }}
+            </p>
+            <input
+              [id]="'document-slot-' + slot.key"
+              type="file"
+              (change)="handleFileSelection($event, slot.key)"
+              class="block w-full text-sm text-gray-600"
+            />
+            <p class="mt-2 text-xs text-gray-500">
+              {{ uploadedDocuments[slot.key] || 'Awaiting file selection' }}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Upload Summary -->
+      <section *ngIf="getSelectedDocumentEntries().length > 0" class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Upload Summary</h3>
+
+        <div class="grid grid-cols-1 gap-3 text-sm">
+          <div
+            *ngFor="let document of getSelectedDocumentEntries()"
+            class="flex items-center justify-between border border-black/5 px-4 py-3"
+          >
+            <span>{{ getSlotLabel(document[0]) }}</span>
+            <span class="font-semibold">{{ document[1] }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="bg-white p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <a
+            routerLink="/application-form"
+            class="text-sm text-gray-700 underline underline-offset-4 hover:text-black"
+          >
+            Back to Application Form
+          </a>
+
+          <div class="flex gap-3">
+            <button
+              type="button"
+              (click)="resetUploads()"
+              [disabled]="isSubmitting"
+              class="border border-black/15 px-6 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+            >
+              Reset Uploads
+            </button>
+
+            <button
+              type="button"
+              (click)="saveAndContinue()"
+              [disabled]="isSubmitting || isLoadingCategories"
+              class="bg-[#163d3b] px-6 py-3 text-sm text-white hover:bg-black transition disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {{ isSubmitting ? 'Uploading...' : 'Save and Continue' }}
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

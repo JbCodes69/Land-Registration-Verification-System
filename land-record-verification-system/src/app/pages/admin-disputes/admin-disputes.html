@@ -1,0 +1,208 @@
+<div class="min-h-screen w-full bg-[#f6f1eb]">
+  <div class="flex min-h-screen w-full overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+      <div>
+        <div class="border-b border-white/10 px-6 py-6">
+          <h1 class="text-2xl font-semibold">LRV System</h1>
+          <p class="mt-1 text-sm text-white/70">Admin Disputes</p>
+        </div>
+
+        <nav class="px-4 py-6">
+          <ul class="space-y-2">
+            <li><a routerLink="/admin-dashboard" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Dashboard</a></li>
+            <li><a routerLink="/admin/applications" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Applications</a></li>
+            <li><a routerLink="/admin/review" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Review Queue</a></li>
+            <li><a routerLink="/admin/verification" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Verification</a></li>
+            <li><a routerLink="/admin/disputes" class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition">Disputes</a></li>
+            <li><a routerLink="/admin/logs" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Audit Logs</a></li>
+            <li><a routerLink="/admin/payments" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Payments</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="border-t border-white/10 px-4 py-5">
+        <div class="mb-4 rounded-md bg-white/10 px-4 py-3 text-sm">
+          Logged in as <span class="font-semibold">{{ adminName }}</span>
+        </div>
+        <div class="flex flex-col gap-2">
+          <a routerLink="/" class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition">Home</a>
+          <a routerLink="/login" class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition">Logout</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+      <section class="mb-8">
+        <h2 class="text-3xl font-semibold text-[#1f1f1f]">Disputed and Flagged Land Records</h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Manage disputed parcels, investigation updates, resolution remarks, and applicant notifications.
+        </p>
+      </section>
+
+      <section *ngIf="isLoading" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Loading dispute records from the land records server...
+        </div>
+      </section>
+
+      <section *ngIf="errorMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ errorMessage }}
+        </div>
+      </section>
+
+      <section class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Disputed</p>
+          <p class="text-2xl font-semibold text-red-700">{{ activeDisputeCount }}</p>
+        </div>
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Under Investigation</p>
+          <p class="text-2xl font-semibold text-amber-700">{{ investigationCount }}</p>
+        </div>
+        <div class="bg-white p-6 shadow-sm">
+          <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Resolved</p>
+          <p class="text-2xl font-semibold text-green-700">{{ resolvedCount }}</p>
+        </div>
+      </section>
+
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Search Dispute Records</h3>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="lg:col-span-2">
+            <label for="disputeSearch" class="mb-2 block text-sm font-medium text-gray-700">Search reference, parcel, applicant, or location</label>
+            <input
+              id="disputeSearch"
+              type="text"
+              [(ngModel)]="searchTerm"
+              placeholder="Search dispute reference, parcel, location, or applicant"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            />
+          </div>
+          <div>
+            <label for="statusFilter" class="mb-2 block text-sm font-medium text-gray-700">Dispute Status</label>
+            <select
+              id="statusFilter"
+              [(ngModel)]="selectedStatus"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+            >
+              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-4">
+          <p class="text-sm text-gray-600">{{ filteredDisputes.length }} dispute record(s) found</p>
+          <button type="button" (click)="clearFilters()" class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition">Clear Filters</button>
+        </div>
+      </section>
+
+      <section class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Dispute Register</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-black/10 bg-[#f7f3ef] text-xs uppercase tracking-wide text-gray-500">
+                <th class="px-4 py-3 font-semibold">Reference</th>
+                <th class="px-4 py-3 font-semibold">Parcel</th>
+                <th class="px-4 py-3 font-semibold">Applicant</th>
+                <th class="px-4 py-3 font-semibold">Location</th>
+                <th class="px-4 py-3 font-semibold">Reason</th>
+                <th class="px-4 py-3 font-semibold">Officer</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let dispute of filteredDisputes" class="border-b border-black/5 align-top last:border-0">
+                <td class="px-4 py-4 font-medium text-[#1f1f1f]">{{ dispute.disputeReference }}</td>
+                <td class="px-4 py-4 text-gray-700">{{ dispute.parcelNumber }}</td>
+                <td class="px-4 py-4 text-gray-700">{{ dispute.applicant }}</td>
+                <td class="px-4 py-4 text-gray-700">{{ dispute.location }}</td>
+                <td class="max-w-xs px-4 py-4 text-gray-700">{{ dispute.disputeReason }}</td>
+                <td class="px-4 py-4 text-gray-700">{{ dispute.assignedOfficer }}</td>
+                <td class="px-4 py-4">
+                  <span class="inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStatusBadgeClass(dispute.status)">
+                    {{ dispute.status }}
+                  </span>
+                </td>
+                <td class="px-4 py-4">
+                  <button type="button" (click)="selectDispute(dispute)" class="text-sm font-medium text-[#163d3b] underline underline-offset-4 hover:text-black">Manage</button>
+                </td>
+              </tr>
+              <tr *ngIf="filteredDisputes.length === 0">
+                <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-600">No dispute records match the selected filters.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Dispute Update</h3>
+
+        <div *ngIf="actionMessage" class="mb-5 rounded-md px-4 py-3 text-sm" [ngClass]="actionMessageType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+          {{ actionMessage }}
+        </div>
+
+        <div *ngIf="selectedDispute; else noDisputeSelected">
+          <div class="mb-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="border border-black/10 px-4 py-4">
+              <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Selected Dispute</p>
+              <p class="font-medium text-[#1f1f1f]">{{ selectedDispute.disputeReference }}</p>
+            </div>
+            <div class="border border-black/10 px-4 py-4">
+              <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Parcel / Plot</p>
+              <p class="font-medium text-[#1f1f1f]">{{ selectedDispute.parcelNumber }} · {{ selectedDispute.plotNumber }}</p>
+            </div>
+            <div class="border border-black/10 px-4 py-4">
+              <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Notification Concept</p>
+              <p class="font-medium text-[#1f1f1f]">{{ selectedDispute.userNotification }}</p>
+            </div>
+          </div>
+
+          <div class="mb-5">
+            <label for="updatedStatus" class="mb-2 block text-sm font-medium text-gray-700">Update Status</label>
+            <select
+              id="updatedStatus"
+              [(ngModel)]="updatedStatus"
+              class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b] md:w-80"
+            >
+              <option *ngFor="let status of editableStatusOptions" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+
+          <label for="adminRemark" class="mb-2 block text-sm font-medium text-gray-700">Admin Remark</label>
+          <textarea
+            id="adminRemark"
+            [(ngModel)]="adminRemark"
+            rows="5"
+            placeholder="Record investigation notes, settlement outcome, boundary findings, or reason for continued flagging."
+            class="mb-5 w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
+          ></textarea>
+
+          <label class="mb-5 flex items-center gap-3 text-sm text-gray-700">
+            <input type="checkbox" [(ngModel)]="notifyApplicant" class="h-4 w-4 accent-[#163d3b]" />
+            Prepare notification update for applicant
+          </label>
+
+          <button
+            type="button"
+            (click)="updateDispute()"
+            [disabled]="isSubmitting"
+            class="bg-[#163d3b] px-6 py-3 text-sm text-white hover:bg-black transition disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ isSubmitting ? 'Saving Update...' : 'Save Dispute Update' }}
+          </button>
+        </div>
+
+        <ng-template #noDisputeSelected>
+          <div class="border border-black/10 px-5 py-8 text-center text-sm text-gray-600">
+            Select a dispute record from the table to manage its status and applicant notification.
+          </div>
+        </ng-template>
+      </section>
+    </main>
+  </div>
+</div>
