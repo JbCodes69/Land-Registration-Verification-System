@@ -7,7 +7,17 @@ const normalNextSteps: Record<string, string> = {
   '/application-form': '/document-upload',
   '/document-upload': '/payment',
   '/payment': '/application-summary',
+  '/application-summary': '/application-status',
 };
+
+const unguardedNextRoutes = new Set([
+  '/user-dashboard',
+  '/verification',
+  '/notifications',
+  '/application-status',
+  '/login',
+  '/',
+]);
 
 function normalizeUrl(url: string): string {
   const path = url.split('?')[0].split('#')[0];
@@ -23,8 +33,22 @@ export const applicationDraftGuard: CanDeactivateFn<unknown> = (
   const draftService = inject(ApplicationDraftService);
   const currentUrl = normalizeUrl(currentState.url);
   const nextUrl = normalizeUrl(nextState?.url || '');
+  const currentRawUrl = currentState.url || '';
+  const nextRawUrl = nextState?.url || '';
 
   if (normalNextSteps[currentUrl] === nextUrl) {
+    return true;
+  }
+
+  if (currentUrl === '/payment' && currentRawUrl.includes('verificationLogId=')) {
+    return true;
+  }
+
+  if (nextUrl === '/payment' && nextRawUrl.includes('verificationLogId=')) {
+    return true;
+  }
+
+  if (unguardedNextRoutes.has(nextUrl)) {
     return true;
   }
 

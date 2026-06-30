@@ -31,6 +31,7 @@ interface AdminPaymentRecord {
   styleUrl: './admin-payments.css',
 })
 export class AdminPayments {
+  isSidebarOpen: boolean = false;
   adminName: string = 'Administrator';
   isLoading: boolean = false;
   errorMessage: string = '';
@@ -41,13 +42,7 @@ export class AdminPayments {
 
   statusOptions: string[] = ['All', 'Pending', 'Successful', 'Failed'];
 
-  methodOptions: string[] = [
-    'All',
-    'Mobile Money',
-    'Bank Transfer',
-    'Card Payment',
-    'Manual Office Payment',
-  ];
+  methodOptions: string[] = ['All', 'Mobile Money', 'Card'];
 
   paymentRecords: AdminPaymentRecord[] = [];
 
@@ -86,8 +81,8 @@ export class AdminPayments {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load admin payment records:', error);
-        this.errorMessage = 'Unable to load payment monitoring records from the server.';
+        console.error('Failed to load admin payment records.');
+        this.errorMessage = 'Unable to load payment records from the server.';
         this.isLoading = false;
       },
     });
@@ -105,16 +100,14 @@ export class AdminPayments {
     const applicant = application
       ? users.find((user) => user.user_id === application.user)?.full_name ||
         `User #${application.user}`
-      : 'Not linked';
+      : 'Not available';
     const workflowType = application
-      ? workflowTypes.find(
-          (workflow) => workflow.workflow_type_id === application.workflow_type
-        )?.workflow_name || 'Unknown Workflow'
-      : 'Unknown Workflow';
+      ? this.getServiceTypeName(application, workflowTypes)
+      : this.normalizeServiceType(payment.service_type || '');
 
     return {
       reference: payment.payment_reference,
-      applicationReference: application?.application_code || `APP-${payment.application}`,
+      applicationReference: application?.application_code || 'No application record available',
       applicant,
       workflowType,
       amount: Number(payment.amount),
@@ -173,7 +166,33 @@ export class AdminPayments {
   }
 
   formatCurrency(amount: number): string {
-    return `SLL ${amount.toLocaleString()}`;
+    return `GHS ${amount.toFixed(2)}`;
+  }
+
+  getServiceTypeName(application: Application, workflowTypes: WorkflowType[]): string {
+    const workflowTypeId = Number(application.workflow_type);
+    const workflowName =
+      workflowTypes.find(
+        (workflow) => Number(workflow.workflow_type_id) === workflowTypeId
+      )?.workflow_name || '';
+
+    return this.normalizeServiceType(workflowName);
+  }
+
+  normalizeServiceType(serviceName: string): string {
+    const normalizedServiceName = (serviceName || '').trim().toLowerCase();
+    const serviceNames: Record<string, string> = {
+      registration: 'Land Registration',
+      'land registration': 'Land Registration',
+      transfer: 'Transfer of Title',
+      'transfer of title': 'Transfer of Title',
+      concurrence: 'Concurrence',
+      consent: 'Consent',
+      verification: 'Land Verification',
+      'land verification': 'Land Verification',
+    };
+
+    return serviceNames[normalizedServiceName] || serviceName.trim() || 'Service type not available';
   }
 
   getPaymentBadgeClass(status: AdminPaymentStatus): string {
@@ -187,7 +206,7 @@ export class AdminPayments {
   }
 
   getPaymentStatusLabel(status: string): string {
-    return status === 'Successful' ? 'Completed' : status;
+    return status;
   }
 
   clearFilters(): void {
@@ -197,6 +216,17 @@ export class AdminPayments {
   }
 
   formatDate(value: string): string {
-    return new Date(value).toLocaleDateString();
+    return new Date(value).toLocaleString('en-GH', {
+      timeZone: 'Africa/Accra',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   }
-}
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

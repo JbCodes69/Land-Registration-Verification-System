@@ -1,0 +1,51 @@
+<ng-container *ngIf="state$ | async as state">
+  <div
+    *ngIf="state.isOpen"
+    class="app-notification-layer"
+    [ngClass]="state.requiresAction ? 'app-notification-layer-modal' : 'app-notification-layer-toast'"
+  >
+    <button
+      *ngIf="state.requiresAction"
+      type="button"
+      class="app-notification-backdrop"
+      aria-label="Close message"
+      (click)="cancel()"
+    ></button>
+
+    <section
+      class="app-notification-panel"
+      [ngClass]="getPanelClass(state.type)"
+      role="dialog"
+      aria-live="polite"
+    >
+      <div class="app-notification-icon" aria-hidden="true">
+        {{ getIconLabel(state.type) }}
+      </div>
+
+      <div class="app-notification-content">
+        <h2>{{ state.title }}</h2>
+        <p>{{ state.message }}</p>
+      </div>
+
+      <div *ngIf="state.requiresAction; else toastClose" class="app-notification-actions">
+        <button *ngIf="state.type === 'confirm'" type="button" class="app-notification-secondary" (click)="cancel()">
+          {{ state.cancelText }}
+        </button>
+        <button type="button" class="app-notification-primary" (click)="confirm()">
+          {{ state.confirmText }}
+        </button>
+      </div>
+
+      <ng-template #toastClose>
+        <button
+          type="button"
+          class="app-notification-close"
+          aria-label="Dismiss message"
+          (click)="close()"
+        >
+          x
+        </button>
+      </ng-template>
+    </section>
+  </div>
+</ng-container>

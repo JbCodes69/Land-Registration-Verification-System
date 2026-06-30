@@ -1,7 +1,25 @@
 <div class="min-h-screen w-full bg-[#f6f1eb]">
-  <div class="flex min-h-screen w-full overflow-hidden">
+  <button
+    type="button"
+    class="app-menu-button lg:hidden"
+    aria-label="Toggle navigation menu"
+    [attr.aria-expanded]="isSidebarOpen"
+    (click)="toggleSidebar()"
+  >
+    <span class="app-menu-button-lines" aria-hidden="true"></span>
+  </button>
+
+  <button
+    *ngIf="isSidebarOpen"
+    type="button"
+    class="app-sidebar-backdrop lg:hidden"
+    aria-label="Close navigation menu"
+    (click)="closeSidebar()"
+  ></button>
+
+  <div class="app-shell">
     <!-- Sidebar -->
-    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+    <aside class="app-sidebar bg-[#163d3b] text-white flex flex-col justify-between" [ngClass]="isSidebarOpen ? 'app-sidebar-open' : ''">
       <div>
         <div class="border-b border-white/10 px-6 py-6">
           <h1 class="text-2xl font-semibold">LRV System</h1>
@@ -13,6 +31,7 @@
             <li>
               <a
                 routerLink="/user-dashboard"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Dashboard
@@ -22,6 +41,7 @@
             <li>
               <a
                 routerLink="/workflow-selection"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Service Selection
@@ -31,6 +51,7 @@
             <li>
               <a
                 routerLink="/application-status"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Application Status
@@ -40,6 +61,7 @@
             <li>
               <a
                 routerLink="/verification"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Verification
@@ -49,6 +71,7 @@
             <li>
               <a
                 routerLink="/notifications"
+                (click)="closeSidebar()"
                 class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
               >
                 Notifications
@@ -58,6 +81,7 @@
             <li>
               <a
                 routerLink="/payment"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Payments
@@ -74,7 +98,8 @@
 
         <div class="flex flex-col gap-2">
           <a
-            routerLink="/"
+            routerLink="/user-dashboard"
+                (click)="closeSidebar()"
             class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
           >
             Home
@@ -82,6 +107,7 @@
 
           <a
             routerLink="/login"
+                (click)="closeSidebar()"
             class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
           >
             Logout
@@ -91,7 +117,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+    <main class="app-main bg-[#f6f1eb] p-4 sm:p-6 md:p-8">
       <!-- Header -->
       <section class="mb-8">
         <h2 class="text-3xl font-semibold text-[#1f1f1f]">Notifications</h2>

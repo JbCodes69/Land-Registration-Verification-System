@@ -21,6 +21,7 @@ import {
   styleUrl: './application-summary.css',
 })
 export class ApplicationSummary {
+  isSidebarOpen: boolean = false;
   private readonly backendBaseUrl = 'http://127.0.0.1:8000';
 
   // Placeholder user data for documentation/demo UI
@@ -30,6 +31,7 @@ export class ApplicationSummary {
   message: string = '';
   messageType: 'success' | 'error' | '' = '';
   isLoading: boolean = false;
+  isSubmitting: boolean = false;
 
   // Workflow and application context
   selectedWorkflow: string = '';
@@ -74,7 +76,7 @@ export class ApplicationSummary {
     this.hasDocumentData = Object.values(this.uploadedDocumentData).some(Boolean);
 
     if (!this.selectedWorkflow) {
-      this.showError('No workflow selected. Please return and choose a workflow.');
+      this.showError('No land service selected. Please return and choose a land service.');
     }
 
     if (this.currentApplicationId) {
@@ -103,11 +105,18 @@ export class ApplicationSummary {
             (landDetail) => landDetail.application === application.application_id
           ) || null;
         this.currentDocuments = documents.filter(
-          (document) => document.application === application.application_id
+          (document) => this.getDocumentApplicationId(document) === application.application_id
         );
         this.currentPayment =
-          payments.find((payment) => payment.application === application.application_id) ||
-          this.currentPayment;
+          payments.find(
+            (payment) =>
+              this.getPaymentApplicationId(payment) === application.application_id &&
+              this.isSuccessfulPayment(payment)
+          ) ||
+          payments.find(
+            (payment) => this.getPaymentApplicationId(payment) === application.application_id
+          ) ||
+          null;
         this.applicationStatuses = statuses;
         this.applicationReference = application.application_code;
         this.applicationStatusName =
@@ -129,7 +138,7 @@ export class ApplicationSummary {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load application summary:', error);
+        console.error('Failed to load application summary.');
         this.isLoading = false;
         this.showError('Unable to load the latest application summary from the server.');
       },
@@ -195,6 +204,14 @@ export class ApplicationSummary {
     window.print();
   }
 
+  formatDate(value: string): string {
+    return new Date(value).toLocaleString('en-GH', {
+      timeZone: 'Africa/Accra',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  }
+
   // Clears UI message
   clearMessage(): void {
     this.message = '';
@@ -213,9 +230,30 @@ export class ApplicationSummary {
     this.messageType = 'success';
   }
 
+  getDocumentApplicationId(document: DocumentRecord): number | null {
+    return document.application_id || document.application || null;
+  }
+
+  getPaymentApplicationId(payment: Payment): number | null {
+    return payment.application || payment.application_id || null;
+  }
+
+  isSuccessfulPayment(payment: Payment | null): boolean {
+    return (payment?.payment_status || '').toLowerCase() === 'successful';
+  }
+
+  hasSuccessfulPayment(): boolean {
+    return this.isSuccessfulPayment(this.currentPayment);
+  }
+
   // Checks if all major sections are ready
   isReadyForSubmission(): boolean {
-    return !!this.selectedWorkflow && this.hasApplicationData && this.hasRequiredDocumentData();
+    return (
+      !!this.selectedWorkflow &&
+      this.hasApplicationData &&
+      this.hasRequiredDocumentData() &&
+      this.hasSuccessfulPayment()
+    );
   }
 
   hasRequiredDocumentData(): boolean {
@@ -257,14 +295,50 @@ export class ApplicationSummary {
     this.clearMessage();
 
     if (!this.isReadyForSubmission()) {
-      this.showError('Application is not ready for submission. Please complete all required stages.');
+      this.showError(
+        this.hasSuccessfulPayment()
+          ? 'Application is not ready for submission. Please complete all required stages.'
+          : 'A successful payment is required before final submission.'
+      );
       return;
     }
 
-    this.applicationDraftService.updateDraft({ applicationSubmissionStatus: 'submitted' });
-    this.applicationDraftService.clearDraft();
-    this.showSuccess('Application submitted successfully.');
+    if (!this.currentApplicationId) {
+      this.showError('No application was found for final submission.');
+      return;
+    }
 
-    this.router.navigate(['/application-status']);
+    this.isSubmitting = true;
+
+    this.apiService.completeApplication(this.currentApplicationId).subscribe({
+      next: () => {
+        this.applicationDraftService.updateDraft({ applicationSubmissionStatus: 'submitted' });
+        this.showSuccess('Application submitted successfully. Redirecting to Application Status.');
+        this.isSubmitting = false;
+        window.setTimeout(() => {
+          this.router.navigate(['/application-status']).then((navigated) => {
+            if (navigated) {
+              this.applicationDraftService.clearDraft();
+            }
+          });
+        }, 600);
+      },
+      error: (error) => {
+        console.error('Failed to complete application.');
+        this.isSubmitting = false;
+        this.showError(
+          error?.error?.detail ||
+            'Unable to complete the application. Please confirm payment and try again.'
+        );
+      },
+    });
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
   }
 }

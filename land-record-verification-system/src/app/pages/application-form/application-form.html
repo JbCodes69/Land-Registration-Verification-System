@@ -1,7 +1,25 @@
 <div class="min-h-screen w-full bg-[#f6f1eb]">
-  <div class="flex min-h-screen w-full overflow-hidden">
+  <button
+    type="button"
+    class="app-menu-button lg:hidden"
+    aria-label="Toggle navigation menu"
+    [attr.aria-expanded]="isSidebarOpen"
+    (click)="toggleSidebar()"
+  >
+    <span class="app-menu-button-lines" aria-hidden="true"></span>
+  </button>
+
+  <button
+    *ngIf="isSidebarOpen"
+    type="button"
+    class="app-sidebar-backdrop lg:hidden"
+    aria-label="Close navigation menu"
+    (click)="closeSidebar()"
+  ></button>
+
+  <div class="app-shell">
     <!-- Sidebar -->
-    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+    <aside class="app-sidebar bg-[#163d3b] text-white flex flex-col justify-between" [ngClass]="isSidebarOpen ? 'app-sidebar-open' : ''">
       <div>
         <div class="border-b border-white/10 px-6 py-6">
           <h1 class="text-2xl font-semibold">LRV System</h1>
@@ -13,6 +31,7 @@
             <li>
               <a
                 routerLink="/user-dashboard"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Dashboard
@@ -22,6 +41,7 @@
             <li>
               <a
                 routerLink="/workflow-selection"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Service Selection
@@ -31,6 +51,7 @@
             <li>
               <a
                 routerLink="/application-form"
+                (click)="closeSidebar()"
                 class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
               >
                 Application Form
@@ -40,6 +61,7 @@
             <li>
               <a
                 routerLink="/document-upload"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Document Upload
@@ -49,6 +71,7 @@
             <li>
               <a
                 routerLink="/application-summary"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Application Summary
@@ -58,6 +81,7 @@
             <li>
               <a
                 routerLink="/application-status"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Application Status
@@ -74,7 +98,8 @@
 
         <div class="flex flex-col gap-2">
           <a
-            routerLink="/"
+            routerLink="/user-dashboard"
+                (click)="closeSidebar()"
             class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
           >
             Home
@@ -82,6 +107,7 @@
 
           <a
             routerLink="/login"
+                (click)="closeSidebar()"
             class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
           >
             Logout
@@ -91,12 +117,12 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+    <main id="application-form-main" class="app-main bg-[#f6f1eb] p-4 sm:p-6 md:p-8">
       <!-- Header -->
       <section class="mb-8">
         <h2 class="text-3xl font-semibold text-[#1f1f1f]">Application Form</h2>
         <p class="mt-2 text-sm text-gray-600">
-          Complete the required details for the selected workflow and proceed to document upload.
+          Complete the required details for the selected land service and proceed to document upload.
         </p>
       </section>
 
@@ -112,15 +138,15 @@
         </div>
       </section>
 
-      <!-- Workflow Info -->
-      <section class="mb-8 bg-white p-6 shadow-sm">
-        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Selected Workflow</h3>
+      <!-- Service Info -->
+      <section id="selected-service-section" class="mb-8 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Selected Land Service</h3>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div class="border border-black/10 px-4 py-4">
-            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Workflow Type</p>
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Service Type</p>
             <p class="text-base font-medium text-[#1f1f1f]">
-              {{ selectedWorkflowLabel || 'No workflow selected' }}
+              {{ selectedWorkflowLabel || 'No land service selected' }}
             </p>
           </div>
 
@@ -275,13 +301,13 @@
             class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
           />
 
-          <input
-            type="text"
+          <textarea
             [(ngModel)]="applicationForm.landDescription"
             id="land-description"
             placeholder="Land Description"
-            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
-          />
+            rows="4"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black md:col-span-2"
+          ></textarea>
 
           <select
             *ngIf="isFieldRequired('ownershipType')"
@@ -303,7 +329,7 @@
       <section class="mb-8 bg-white p-6 shadow-sm">
         <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Instrument Details</h3>
         <p class="mb-5 text-sm text-gray-600">
-          Capture the legal or transactional details of the selected workflow.
+          Capture the legal or transactional details of the selected land service.
         </p>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -346,43 +372,43 @@
         </div>
       </section>
 
-      <!-- Workflow Specific Details -->
+      <!-- Service Specific Details -->
       <section
         *ngIf="isTransferWorkflow() || isConsentWorkflow() || isConcurrenceWorkflow()"
         class="mb-8 bg-white p-6 shadow-sm"
       >
-        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Workflow Specific Details</h3>
+        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Service Specific Details</h3>
         <p class="mb-5 text-sm text-gray-600">
-          Complete the details required for the selected service workflow.
+          Complete the details required for the selected land service.
         </p>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <input
+          <textarea
             *ngIf="isTransferWorkflow()"
-            type="text"
             [(ngModel)]="applicationForm.transferReason"
             id="transfer-reason"
             placeholder="Transfer Reason *"
-            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
-          />
+            rows="5"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black md:col-span-2"
+          ></textarea>
 
-          <input
+          <textarea
             *ngIf="isConsentWorkflow()"
-            type="text"
             [(ngModel)]="applicationForm.consentPurpose"
             id="consent-purpose"
             placeholder="Consent Purpose *"
-            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
-          />
+            rows="4"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black md:col-span-2"
+          ></textarea>
 
-          <input
+          <textarea
             *ngIf="isConcurrenceWorkflow()"
-            type="text"
             [(ngModel)]="applicationForm.concurrencePurpose"
             id="concurrence-purpose"
             placeholder="Concurrence Purpose *"
-            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black"
-          />
+            rows="4"
+            class="w-full border border-black/15 bg-transparent px-4 py-3 text-sm outline-none focus:border-black md:col-span-2"
+          ></textarea>
         </div>
       </section>
 
@@ -408,9 +434,10 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
           <a
             routerLink="/workflow-selection"
+                (click)="closeSidebar()"
             class="text-sm text-gray-700 underline underline-offset-4 hover:text-black"
           >
-            Back to Workflow Selection
+            Back to Service Selection
           </a>
 
           <div class="flex gap-3">

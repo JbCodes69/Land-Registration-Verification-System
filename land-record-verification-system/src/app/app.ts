@@ -1,10 +1,11 @@
 import { Component, HostListener, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ApplicationDraftService } from './services/application-draft.service';
+import { AppNotification } from './shared/app-notification/app-notification';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, AppNotification],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

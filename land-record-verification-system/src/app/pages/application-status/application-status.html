@@ -1,7 +1,25 @@
 <div class="min-h-screen w-full bg-[#f6f1eb]">
-  <div class="flex min-h-screen w-full overflow-hidden">
+  <button
+    type="button"
+    class="app-menu-button lg:hidden"
+    aria-label="Toggle navigation menu"
+    [attr.aria-expanded]="isSidebarOpen"
+    (click)="toggleSidebar()"
+  >
+    <span class="app-menu-button-lines" aria-hidden="true"></span>
+  </button>
+
+  <button
+    *ngIf="isSidebarOpen"
+    type="button"
+    class="app-sidebar-backdrop lg:hidden"
+    aria-label="Close navigation menu"
+    (click)="closeSidebar()"
+  ></button>
+
+  <div class="app-shell">
     <!-- Sidebar -->
-    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+    <aside class="app-sidebar bg-[#163d3b] text-white flex flex-col justify-between" [ngClass]="isSidebarOpen ? 'app-sidebar-open' : ''">
       <div>
         <div class="border-b border-white/10 px-6 py-6">
           <h1 class="text-2xl font-semibold">LRV System</h1>
@@ -13,6 +31,7 @@
             <li>
               <a
                 routerLink="/user-dashboard"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Dashboard
@@ -22,6 +41,7 @@
             <li>
               <a
                 routerLink="/workflow-selection"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Service Selection
@@ -31,6 +51,7 @@
             <li>
               <a
                 routerLink="/application-form"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Application Form
@@ -40,6 +61,7 @@
             <li>
               <a
                 routerLink="/document-upload"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Document Upload
@@ -49,6 +71,7 @@
             <li>
               <a
                 routerLink="/application-status"
+                (click)="closeSidebar()"
                 class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
               >
                 Application Status
@@ -58,6 +81,7 @@
             <li>
               <a
                 routerLink="/verification"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Verification
@@ -67,6 +91,7 @@
             <li>
               <a
                 routerLink="/notifications"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Notifications
@@ -76,6 +101,7 @@
             <li>
               <a
                 routerLink="/payment"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Payments
@@ -92,7 +118,8 @@
 
         <div class="flex flex-col gap-2">
           <a
-            routerLink="/"
+            routerLink="/user-dashboard"
+                (click)="closeSidebar()"
             class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
           >
             Home
@@ -100,6 +127,7 @@
 
           <a
             routerLink="/login"
+                (click)="closeSidebar()"
             class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
           >
             Logout
@@ -109,7 +137,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+    <main class="app-main bg-[#f6f1eb] p-4 sm:p-6 md:p-8">
       <!-- Header -->
       <section class="mb-8">
         <h2 class="text-3xl font-semibold text-[#1f1f1f]">Application Status</h2>
@@ -142,6 +170,7 @@
 
           <a
             routerLink="/payment"
+                (click)="closeSidebar()"
             class="bg-[#163d3b] px-5 py-3 text-sm text-white hover:bg-black transition"
           >
             View Payment
@@ -155,7 +184,7 @@
           </div>
 
           <div class="border border-black/10 px-4 py-4">
-            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Workflow Type</p>
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Service Type</p>
             <p class="text-base font-medium text-[#1f1f1f]">{{ application.workflowType }}</p>
           </div>
 
@@ -199,9 +228,9 @@
         </section>
       </ng-template>
 
-      <!-- Admin Remark -->
+      <!-- Administrative Remark -->
       <section *ngIf="currentApplication as application" class="mb-8 bg-white p-6 shadow-sm">
-        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Admin Remark</h3>
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Administrative Remark</h3>
 
         <div class="border-l-4 border-[#163d3b] bg-[#f6f1eb] px-5 py-4">
           <p class="text-sm leading-6 text-gray-700">{{ application.adminRemark }}</p>
@@ -220,9 +249,10 @@
 
           <a
             routerLink="/workflow-selection"
+                (click)="closeSidebar()"
             class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition"
           >
-            Start New Application
+            Start Land Service Application
           </a>
         </div>
 
@@ -231,10 +261,10 @@
             <thead>
               <tr class="border-b border-black/10 bg-[#f7f3ef] text-xs uppercase tracking-wide text-gray-500">
                 <th class="px-4 py-3 font-semibold">Reference</th>
-                <th class="px-4 py-3 font-semibold">Workflow Type</th>
+                <th class="px-4 py-3 font-semibold">Service Type</th>
                 <th class="px-4 py-3 font-semibold">Date Submitted</th>
                 <th class="px-4 py-3 font-semibold">Status</th>
-                <th class="px-4 py-3 font-semibold">Admin Remark</th>
+                <th class="px-4 py-3 font-semibold">Administrative Remark</th>
                 <th class="px-4 py-3 font-semibold">Payment</th>
               </tr>
             </thead>

@@ -9,6 +9,22 @@ export class AuthService {
   private readonly currentUserKey = 'currentUser';
   private readonly accessTokenKey = 'accessToken';
   private readonly refreshTokenKey = 'refreshToken';
+  private readonly userScopedStorageKeys = [
+    'selectedWorkflow',
+    'selectedWorkflowLabel',
+    'selectedWorkflowTypeId',
+    'currentApplicationId',
+    'currentApplicationCode',
+    'currentLandDetailId',
+    'applicationFormData',
+    'uploadedDocumentData',
+    'uploadedDocumentRecords',
+    'currentPayment',
+    'applicationSubmissionStatus',
+    'applicationDraftStatus',
+    'adminReviewApplicationId',
+  ];
+  private readonly userScopedSessionKeys = ['applicationDraft'];
 
   constructor(private router: Router) {}
 
@@ -29,8 +45,8 @@ export class AuthService {
 
     try {
       return JSON.parse(savedUser) as CurrentUser;
-    } catch (error) {
-      console.error('Unable to parse current user from localStorage:', error);
+    } catch {
+      console.error('Unable to parse current user from localStorage.');
       this.clearCurrentUser();
       return null;
     }
@@ -42,12 +58,23 @@ export class AuthService {
   }
 
   setSession(user: CurrentUser, accessToken: string, refreshToken: string): void {
+    const existingUser = this.getCurrentUser();
+    if (!existingUser || existingUser.user_id !== user.user_id) {
+      this.clearUserScopedState();
+    }
+
     localStorage.setItem(this.accessTokenKey, accessToken);
     localStorage.setItem(this.refreshTokenKey, refreshToken);
     this.setCurrentUser(user);
   }
 
+  clearUserScopedState(): void {
+    this.userScopedStorageKeys.forEach((key) => localStorage.removeItem(key));
+    this.userScopedSessionKeys.forEach((key) => sessionStorage.removeItem(key));
+  }
+
   clearCurrentUser(): void {
+    this.clearUserScopedState();
     localStorage.removeItem(this.currentUserKey);
     localStorage.removeItem(this.accessTokenKey);
     localStorage.removeItem(this.refreshTokenKey);
@@ -69,11 +96,11 @@ export class AuthService {
   }
 
   isApplicant(user: CurrentUser | null = this.getCurrentUser()): boolean {
-    return user?.role_name?.toLowerCase() === 'applicant';
+    return user?.role_id === 1 || user?.role_name?.toLowerCase() === 'applicant';
   }
 
   isAdministrator(user: CurrentUser | null = this.getCurrentUser()): boolean {
-    return user?.role_name?.toLowerCase() === 'administrator';
+    return user?.role_id === 2 || user?.role_name?.toLowerCase() === 'administrator';
   }
 
   getDashboardRoute(user: CurrentUser): string {

@@ -17,7 +17,7 @@ type RecordStatus =
   | 'Verified'
   | 'Already Registered'
   | 'Under Review'
-  | 'Disputed / Flagged'
+  | 'Disputed'
   | 'Pending Verification';
 
 type VerificationDecision = 'Mark Verified' | 'Flag Dispute' | 'Request Review';
@@ -43,6 +43,7 @@ interface LandRecord {
   styleUrl: './admin-verification.css',
 })
 export class AdminVerification {
+  isSidebarOpen: boolean = false;
   adminName: string = 'Administrator';
   isLoading: boolean = false;
   isSubmittingDecision: boolean = false;
@@ -60,7 +61,7 @@ export class AdminVerification {
     'Verified',
     'Already Registered',
     'Under Review',
-    'Disputed / Flagged',
+    'Disputed',
     'Pending Verification',
   ];
 
@@ -85,20 +86,29 @@ export class AdminVerification {
       verificationLogs: this.apiService.getVerificationLogs(),
     }).subscribe({
       next: ({ landDetails, applications, statuses, workflowTypes, users, verificationLogs }) => {
-        this.landRecords = landDetails.map((landDetail) =>
-          this.mapLandDetailToRecord(
-            landDetail,
-            applications,
-            statuses,
-            workflowTypes,
-            users,
-            verificationLogs
-          )
-        );
+        this.landRecords = landDetails
+          .filter((landDetail) => {
+            const application = applications.find(
+              (item) => item.application_id === landDetail.application
+            );
+            return application
+              ? this.isAdminVisibleApplication(application, statuses)
+              : false;
+          })
+          .map((landDetail) =>
+            this.mapLandDetailToRecord(
+              landDetail,
+              applications,
+              statuses,
+              workflowTypes,
+              users,
+              verificationLogs
+            )
+          );
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load admin verification records:', error);
+        console.error('Failed to load admin verification records.');
         this.errorMessage = 'Unable to load verification records from the server.';
         this.isLoading = false;
       },
@@ -133,13 +143,11 @@ export class AdminVerification {
       registeredOwner: application
         ? users.find((user) => user.user_id === application.user)?.full_name ||
           `User #${application.user}`
-        : 'Not linked',
+        : 'Owner details unavailable',
       applicationReference: application?.application_code || `APP-${landDetail.application}`,
       workflowType: application
-        ? workflowTypes.find(
-            (workflow) => workflow.workflow_type_id === application.workflow_type
-          )?.workflow_name || 'Unknown Workflow'
-        : 'Unknown Workflow',
+        ? this.getServiceTypeName(application, workflowTypes)
+        : 'Service type not available',
       lastChecked: relatedLog
         ? this.formatDate(relatedLog.checked_at)
         : this.formatDate(landDetail.updated_at),
@@ -150,7 +158,7 @@ export class AdminVerification {
 
   resolveRecordStatus(landDetail: LandDetail, applicationStatus: string): RecordStatus {
     if (landDetail.is_disputed) {
-      return 'Disputed / Flagged';
+      return 'Disputed';
     }
 
     if (landDetail.is_already_registered) {
@@ -166,6 +174,41 @@ export class AdminVerification {
     }
 
     return 'Pending Verification';
+  }
+
+  isAdminVisibleApplication(application: Application, statuses: ApplicationStatus[]): boolean {
+    const normalizedStatus = (
+      statuses.find((status) => status.status_id === application.status)?.status_name || ''
+    ).toLowerCase();
+    const hiddenStatuses = ['draft', 'pending submission', 'in progress'];
+
+    return !!application.submitted_at && !hiddenStatuses.includes(normalizedStatus);
+  }
+
+  getServiceTypeName(application: Application, workflowTypes: WorkflowType[]): string {
+    const workflowTypeId = Number(application.workflow_type);
+    const workflowName =
+      workflowTypes.find(
+        (workflow) => Number(workflow.workflow_type_id) === workflowTypeId
+      )?.workflow_name || '';
+
+    return this.normalizeServiceType(workflowName);
+  }
+
+  normalizeServiceType(serviceName: string): string {
+    const normalizedServiceName = (serviceName || '').trim().toLowerCase();
+    const serviceNames: Record<string, string> = {
+      registration: 'Land Registration',
+      'land registration': 'Land Registration',
+      transfer: 'Transfer of Title',
+      'transfer of title': 'Transfer of Title',
+      concurrence: 'Concurrence',
+      consent: 'Consent',
+      verification: 'Land Verification',
+      'land verification': 'Land Verification',
+    };
+
+    return serviceNames[normalizedServiceName] || serviceName.trim() || 'Service type not available';
   }
 
   get filteredRecords(): LandRecord[] {
@@ -198,7 +241,7 @@ export class AdminVerification {
   }
 
   get flaggedCount(): number {
-    return this.landRecords.filter((record) => record.status === 'Disputed / Flagged')
+    return this.landRecords.filter((record) => record.status === 'Disputed')
       .length;
   }
 
@@ -207,7 +250,7 @@ export class AdminVerification {
       Verified: 'bg-green-100 text-green-800',
       'Already Registered': 'bg-blue-100 text-blue-800',
       'Under Review': 'bg-amber-100 text-amber-800',
-      'Disputed / Flagged': 'bg-red-100 text-red-800',
+      Disputed: 'bg-red-100 text-red-800',
       'Pending Verification': 'bg-gray-100 text-gray-700',
     };
 
@@ -240,7 +283,7 @@ export class AdminVerification {
     }
 
     if (!this.selectedRecord.landDetailId) {
-      this.actionMessage = 'This record is not linked to a backend land detail.';
+      this.actionMessage = 'This record has no associated land detail.';
       this.actionMessageType = 'error';
       return;
     }
@@ -257,7 +300,7 @@ export class AdminVerification {
       'Flag Dispute': {
         is_already_registered: false,
         is_disputed: true,
-        status: 'Disputed / Flagged',
+        status: 'Disputed',
       },
       'Request Review': {
         is_already_registered: false,
@@ -288,7 +331,7 @@ export class AdminVerification {
           this.isSubmittingDecision = false;
         },
         error: (error) => {
-          console.error('Failed to save verification decision:', error);
+          console.error('Failed to save verification decision.');
           this.actionMessage =
             'Unable to save the verification decision to the server. Please try again.';
           this.actionMessageType = 'error';
@@ -298,6 +341,17 @@ export class AdminVerification {
   }
 
   formatDate(value: string): string {
-    return new Date(value).toLocaleDateString();
+    return new Date(value).toLocaleString('en-GH', {
+      timeZone: 'Africa/Accra',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   }
-}
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

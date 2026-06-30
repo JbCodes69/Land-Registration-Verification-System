@@ -7,6 +7,8 @@ from django.utils import timezone
 
 APPLICANT_ROLE = "Applicant"
 ADMINISTRATOR_ROLE = "Administrator"
+APPLICANT_ROLE_ID = 1
+ADMINISTRATOR_ROLE_ID = 2
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_LIFETIME = timedelta(minutes=60)
 REFRESH_TOKEN_LIFETIME = timedelta(days=7)
@@ -20,12 +22,20 @@ def get_role_name(user):
 
 def is_applicant(user):
     role_name = get_role_name(user)
-    return role_name is not None and role_name.lower() == APPLICANT_ROLE.lower()
+    role_id = getattr(user, "role_id", None)
+    return (
+        role_id == APPLICANT_ROLE_ID
+        or (role_name is not None and role_name.lower() == APPLICANT_ROLE.lower())
+    )
 
 
 def is_administrator(user):
     role_name = get_role_name(user)
-    return role_name is not None and role_name.lower() == ADMINISTRATOR_ROLE.lower()
+    role_id = getattr(user, "role_id", None)
+    return (
+        role_id == ADMINISTRATOR_ROLE_ID
+        or (role_name is not None and role_name.lower() == ADMINISTRATOR_ROLE.lower())
+    )
 
 
 def _jwt_payload(user, token_type, lifetime):

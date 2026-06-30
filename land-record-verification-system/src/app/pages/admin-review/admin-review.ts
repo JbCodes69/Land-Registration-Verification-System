@@ -1,22 +1,25 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
+import { forkJoin, map, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import {
   Application,
+  ApplicationParty,
   ApplicationStatus,
   DocumentCategory,
   DocumentRecord,
+  DisputeFlag,
   LandDetail,
   Payment,
   User,
   WorkflowType,
 } from '../../models/api.models';
+import { AppNotificationService } from '../../services/app-notification.service';
 
-type ReviewDecision = 'Queried' | 'Approved' | 'Rejected';
+type ReviewDecision = 'Disputed' | 'Approved' | 'Rejected';
 type DocumentReviewStatus =
   | 'Complete'
   | 'Incomplete'
@@ -44,6 +47,29 @@ interface SubmittedDocument {
   status: 'Submitted' | 'Needs Review' | 'Accepted';
 }
 
+interface SelectedReviewApplication {
+  reference: string;
+  workflowType: string;
+  submittedDate: string;
+  currentStatus: ReviewStatus;
+  paymentStatus: string;
+  applicantName: string;
+  applicantRole: string;
+  applicantPhone: string;
+  applicantEmail: string;
+  applicantAddress: string;
+  parcelNumber: string;
+  landDetailId: number | null;
+  disputeFlagId: number | null;
+  plotNumber: string;
+  location: string;
+  landSize: string;
+  landUse: string;
+  instrumentType: string;
+  verificationStatus: string;
+  disputeWarning: string;
+}
+
 @Component({
   selector: 'app-admin-review',
   imports: [CommonModule, FormsModule, RouterLink],
@@ -51,6 +77,7 @@ interface SubmittedDocument {
   styleUrl: './admin-review.css',
 })
 export class AdminReview {
+  isSidebarOpen: boolean = false;
   private readonly backendBaseUrl = 'http://127.0.0.1:8000';
 
   adminName: string = 'Administrator';
@@ -68,7 +95,7 @@ export class AdminReview {
   selectedApplicationId: number | null = null;
   applicationStatuses: ApplicationStatus[] = [];
 
-  reviewDecisionOptions: ReviewDecision[] = ['Queried', 'Approved', 'Rejected'];
+  reviewDecisionOptions: ReviewDecision[] = ['Disputed', 'Approved', 'Rejected'];
   documentReviewStatusOptions: DocumentReviewStatus[] = [
     'Complete',
     'Incomplete',
@@ -89,35 +116,22 @@ export class AdminReview {
   ];
   reviewCommentPlaceholder: string = [
     'Documents reviewed and found complete.',
-    'Application queried due to missing or unclear supporting document.',
+    'Land record is disputed and requires administrative handling.',
     'Application rejected due to inconsistent land details.',
     'Application approved after successful document and land record review.',
     'Land record requires further verification before approval.',
   ].join('\n');
 
-  selectedApplication = {
-    reference: 'Not provided',
-    workflowType: 'Not provided',
-    submittedDate: 'Not provided',
-    currentStatus: 'Not provided' as ReviewStatus,
-    paymentStatus: 'Not provided',
-    applicantName: 'Not provided',
-    applicantPhone: 'Not provided',
-    applicantEmail: 'Not provided',
-    applicantAddress: 'Not provided',
-    parcelNumber: 'Not provided',
-    plotNumber: 'Not provided',
-    location: 'Not provided',
-    landSize: 'Not provided',
-    landUse: 'Not provided',
-    instrumentType: 'Not provided',
-    verificationStatus: 'Not provided',
-    disputeWarning: 'Not provided',
-  };
+  selectedApplication: SelectedReviewApplication | null = null;
 
   submittedDocuments: SubmittedDocument[] = [];
 
-  constructor(private apiService: ApiService, private authService: AuthService) {}
+  constructor(
+    private apiService: ApiService,
+    private authService: AuthService,
+    private appNotificationService: AppNotificationService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     const currentUser = this.authService.getCurrentUser();
@@ -127,6 +141,17 @@ export class AdminReview {
   }
 
   loadReviewApplication(): void {
+    const selectedApplicationId = this.getStoredReviewApplicationId();
+    if (!selectedApplicationId) {
+      this.selectedApplicationId = null;
+      this.selectedApplication = null;
+      this.submittedDocuments = [];
+      this.decisionMessage = 'No application selected for review.';
+      this.decisionMessageType = 'error';
+      this.isLoading = false;
+      return;
+    }
+
     this.isLoading = true;
     this.decisionMessage = '';
     this.decisionMessageType = '';
@@ -139,7 +164,9 @@ export class AdminReview {
       landDetails: this.apiService.getLandDetails(),
       documents: this.apiService.getDocuments(),
       documentCategories: this.apiService.getDocumentCategories(),
+      applicationParties: this.apiService.getApplicationParties(),
       payments: this.apiService.getPayments(),
+      disputeFlags: this.apiService.getDisputeFlags(),
     }).subscribe({
       next: ({
         applications,
@@ -149,15 +176,30 @@ export class AdminReview {
         landDetails,
         documents,
         documentCategories,
+        applicationParties,
         payments,
+        disputeFlags,
       }) => {
         this.applicationStatuses = statuses;
-        const selectedApplication =
-          this.findSelectedApplication(applications, statuses) ||
-          applications[0];
+        const selectedApplication = applications.find(
+          (application) => application.application_id === selectedApplicationId
+        );
 
         if (!selectedApplication) {
-          this.decisionMessage = 'No submitted applications are available for review.';
+          this.selectedApplicationId = null;
+          this.selectedApplication = null;
+          this.submittedDocuments = [];
+          this.decisionMessage = 'The selected application could not be found for review.';
+          this.decisionMessageType = 'error';
+          this.isLoading = false;
+          return;
+        }
+
+        if (!this.isAdminVisibleApplication(selectedApplication, statuses)) {
+          this.selectedApplicationId = null;
+          this.selectedApplication = null;
+          this.submittedDocuments = [];
+          this.decisionMessage = 'This application has not been finally submitted for administrative review.';
           this.decisionMessageType = 'error';
           this.isLoading = false;
           return;
@@ -170,7 +212,9 @@ export class AdminReview {
           workflowTypes,
           users,
           landDetails,
-          payments
+          applicationParties,
+          payments,
+          disputeFlags
         );
         this.mapSubmittedDocuments(
           selectedApplication.application_id,
@@ -180,43 +224,26 @@ export class AdminReview {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load admin review data:', error);
-        this.decisionMessage = 'Unable to load review data from the server.';
-        this.decisionMessageType = 'error';
+        console.error('Failed to load admin review data.');
+        this.showErrorAndFocus(
+          'Unable to load review data from the server.',
+          'reviewDecision'
+        );
         this.isLoading = false;
       },
     });
   }
 
-  findSelectedApplication(
-    applications: Application[],
-    statuses: ApplicationStatus[]
-  ): Application | undefined {
+  getStoredReviewApplicationId(): number | null {
     const storedApplicationId = Number(localStorage.getItem('adminReviewApplicationId') || 0);
-    const currentApplicationId = Number(localStorage.getItem('currentApplicationId') || 0);
-    const preferredId = storedApplicationId || currentApplicationId;
+    return storedApplicationId > 0 ? storedApplicationId : null;
+  }
 
-    if (preferredId) {
-      const matchedApplication = applications.find(
-        (application) => application.application_id === preferredId
-      );
+  isAdminVisibleApplication(application: Application, statuses: ApplicationStatus[]): boolean {
+    const normalizedStatus = this.getStatusName(application.status, statuses).toLowerCase();
+    const hiddenStatuses = ['draft', 'pending submission', 'in progress'];
 
-      if (matchedApplication) {
-        return matchedApplication;
-      }
-    }
-
-    return applications
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
-      )
-      .find((application) =>
-        ['Submitted', 'Pending Review', 'Queried'].includes(
-          this.getStatusName(application.status, statuses)
-        )
-      );
+    return !!application.submitted_at && !hiddenStatuses.includes(normalizedStatus);
   }
 
   mapSelectedApplication(
@@ -225,46 +252,141 @@ export class AdminReview {
     workflowTypes: WorkflowType[],
     users: User[],
     landDetails: LandDetail[],
-    payments: Payment[]
+    applicationParties: ApplicationParty[],
+    payments: Payment[],
+    disputeFlags: DisputeFlag[]
   ): void {
-    const applicant = users.find((user) => user.user_id === application.user);
+    const accountUser = users.find((user) => user.user_id === application.user);
+    const applicationParty = applicationParties.find(
+      (party) => Number(party.application) === Number(application.application_id)
+    );
     const landDetail = landDetails.find(
       (item) => item.application === application.application_id
     );
     const payment = payments.find(
       (item) => item.application === application.application_id
     );
+    const disputeFlag = landDetail
+      ? disputeFlags.find(
+          (flag) =>
+            Number(flag.land_detail) === Number(landDetail.land_detail_id) &&
+            (flag.flag_status || '').toLowerCase() !== 'resolved'
+        ) || null
+      : null;
 
     this.selectedApplication = {
       reference: application.application_code,
-      workflowType:
-        workflowTypes.find(
-          (workflow) => workflow.workflow_type_id === application.workflow_type
-        )?.workflow_name || 'Unknown Workflow',
+      workflowType: this.getServiceTypeName(application, workflowTypes),
       submittedDate: this.formatDate(application.submitted_at),
-      currentStatus: this.getStatusName(application.status, statuses),
+      currentStatus: this.getReviewDisplayStatus(
+        this.getStatusName(application.status, statuses),
+        landDetail,
+        disputeFlag
+      ),
       paymentStatus: payment?.payment_status || 'Not Required',
-      applicantName: applicant?.full_name || `User #${application.user}`,
-      applicantPhone: applicant?.phone_number || 'Not provided',
-      applicantEmail: applicant?.email || 'Not provided',
-      applicantAddress: 'Not provided by applicant profile',
-      parcelNumber: landDetail?.parcel_number || 'Not provided',
-      plotNumber: landDetail?.plot_number || 'Not provided',
-      location: landDetail?.property_location || 'Not provided',
-      landSize: landDetail?.land_size || 'Not provided',
+      applicantName:
+        this.cleanPartyValue(applicationParty?.party_name) ||
+        accountUser?.full_name ||
+        `User #${application.user}`,
+      applicantRole: this.cleanPartyValue(applicationParty?.party_role) || 'Applicant',
+      applicantPhone:
+        this.getContactDetail(applicationParty?.contact_details, 'Phone') ||
+        accountUser?.phone_number ||
+        'Information not available',
+      applicantEmail:
+        this.getContactDetail(applicationParty?.contact_details, 'Email') ||
+        accountUser?.email ||
+        'Information not available',
+      applicantAddress: this.getApplicantAddress(application, applicationParties),
+      landDetailId: landDetail?.land_detail_id || null,
+      disputeFlagId: disputeFlag?.dispute_flag_id || null,
+      parcelNumber: landDetail?.parcel_number || 'Not available',
+      plotNumber: landDetail?.plot_number || 'Not available',
+      location: landDetail?.property_location || 'Not available',
+      landSize: landDetail?.land_size || 'Not available',
       landUse: landDetail?.land_description || 'Not specified',
-      instrumentType: landDetail?.instrument_type || 'Not provided',
+      instrumentType: landDetail?.instrument_type || 'Not available',
       verificationStatus: landDetail?.is_disputed
-        ? 'Disputed / Flagged'
+        ? 'Disputed'
         : landDetail?.is_already_registered
         ? 'Already Registered'
         : this.getStatusName(application.status, statuses),
       disputeWarning: landDetail?.is_disputed
-        ? 'This parcel is marked as disputed in the backend and requires special review.'
-        : 'No active dispute confirmed from backend land detail records.',
+        ? 'This parcel is marked as disputed and requires special review.'
+        : 'No active dispute has been recorded for this land record.',
     };
 
-    this.adminRemark = application.remarks || '';
+    this.adminRemark = this.getAdministrativeReviewNotes(application.remarks);
+  }
+
+  getServiceTypeName(application: Application, workflowTypes: WorkflowType[]): string {
+    const workflowTypeId = Number(application.workflow_type);
+    const workflowName =
+      workflowTypes.find(
+        (workflow) => Number(workflow.workflow_type_id) === workflowTypeId
+      )?.workflow_name || '';
+
+    return this.normalizeServiceType(workflowName);
+  }
+
+  normalizeServiceType(serviceName: string): string {
+    const normalizedServiceName = (serviceName || '').trim().toLowerCase();
+    const serviceNames: Record<string, string> = {
+      registration: 'Land Registration',
+      'land registration': 'Land Registration',
+      transfer: 'Transfer of Title',
+      'transfer of title': 'Transfer of Title',
+      concurrence: 'Concurrence',
+      consent: 'Consent',
+      verification: 'Land Verification',
+      'land verification': 'Land Verification',
+    };
+
+    return serviceNames[normalizedServiceName] || serviceName.trim() || 'Service type not available';
+  }
+
+  getAdministrativeReviewNotes(remarks: string | null): string {
+    const trimmedRemarks = (remarks || '').trim();
+    if (trimmedRemarks.toLowerCase() === 'application submitted from angular frontend.') {
+      return 'Enter administrative review notes for this application.';
+    }
+
+    const reviewCommentMatch = trimmedRemarks.match(/(?:^|\n)Review Comment:\s*([\s\S]*)$/i);
+    if (reviewCommentMatch) {
+      return reviewCommentMatch[1].trim();
+    }
+
+    return trimmedRemarks;
+  }
+
+  getApplicantAddress(
+    application: Application,
+    applicationParties: ApplicationParty[]
+  ): string {
+    const applicationParty = applicationParties.find(
+      (party) => Number(party.application) === Number(application.application_id)
+    );
+    const partyAddress = applicationParty?.address?.trim() || '';
+
+    return partyAddress && partyAddress.toLowerCase() !== 'not provided'
+      ? partyAddress
+      : 'Address information not available';
+  }
+
+  getContactDetail(contactDetails: string | null | undefined, label: string): string {
+    const detailParts = (contactDetails || '').split('|').map((part) => part.trim());
+    const matchedPart = detailParts.find((part) =>
+      part.toLowerCase().startsWith(`${label.toLowerCase()}:`)
+    );
+
+    return this.cleanPartyValue(matchedPart?.split(':').slice(1).join(':'));
+  }
+
+  cleanPartyValue(value: string | null | undefined): string {
+    const trimmedValue = (value || '').trim();
+    return trimmedValue && trimmedValue.toLowerCase() !== 'not provided'
+      ? trimmedValue
+      : '';
   }
 
   mapSubmittedDocuments(
@@ -273,14 +395,14 @@ export class AdminReview {
     documentCategories: DocumentCategory[]
   ): void {
     const relatedDocuments = documents.filter(
-      (document) => document.application === applicationId
+      (document) => this.getDocumentApplicationId(document) === applicationId
     );
 
     this.submittedDocuments = relatedDocuments.map((document) => ({
       category:
         documentCategories.find(
           (category) =>
-            category.document_category_id === document.document_category
+            category.document_category_id === this.getDocumentCategoryId(document)
         )?.category_name || document.document_name,
       fileName: document.document_name || this.getFileName(document.file_url || document.file_path || ''),
       fileUrl: this.resolveFileUrl(document.file_url || document.file_path || ''),
@@ -293,6 +415,14 @@ export class AdminReview {
           ? 'Needs Review'
           : 'Submitted',
     }));
+  }
+
+  getDocumentApplicationId(document: DocumentRecord): number | null {
+    return document.application_id || document.application || null;
+  }
+
+  getDocumentCategoryId(document: DocumentRecord): number | null {
+    return document.document_category_id || document.document_category || null;
   }
 
   resolveFileUrl(fileUrl: string): string {
@@ -322,6 +452,18 @@ export class AdminReview {
     );
   }
 
+  getReviewDisplayStatus(
+    baseStatus: string,
+    landDetail: LandDetail | undefined,
+    disputeFlag: DisputeFlag | null
+  ): string {
+    if (baseStatus.toLowerCase() === 'rejected') {
+      return 'Rejected';
+    }
+
+    return landDetail?.is_disputed || disputeFlag ? 'Disputed' : baseStatus;
+  }
+
   getStatusBadgeClass(status: ReviewStatus): string {
     const normalizedStatus = status.toLowerCase();
 
@@ -333,7 +475,7 @@ export class AdminReview {
       return 'bg-amber-100 text-amber-800';
     }
 
-    if (normalizedStatus === 'queried') {
+    if (normalizedStatus === 'queried' || normalizedStatus === 'disputed') {
       return 'bg-purple-100 text-purple-800';
     }
 
@@ -370,76 +512,151 @@ export class AdminReview {
 
   submitDecision(): void {
     if (!this.selectedReviewDecision) {
-      this.decisionMessage = 'Select a review decision before submitting.';
-      this.decisionMessageType = 'error';
+      this.showErrorAndFocus('Select a review decision before submitting.', 'reviewDecision');
       return;
     }
 
     if (!this.selectedDocumentReviewStatus) {
-      this.decisionMessage = 'Select the document review status before submitting.';
-      this.decisionMessageType = 'error';
+      this.showErrorAndFocus(
+        'Select the document review status before submitting.',
+        'documentReviewStatus'
+      );
       return;
     }
 
     if (!this.selectedVerificationOutcome) {
-      this.decisionMessage = 'Select the verification outcome before submitting.';
-      this.decisionMessageType = 'error';
+      this.showErrorAndFocus(
+        'Select the verification outcome before submitting.',
+        'verificationOutcome'
+      );
       return;
     }
 
     if (!this.adminRemark.trim()) {
-      this.decisionMessage = 'Enter a professional review comment before submitting.';
-      this.decisionMessageType = 'error';
+      this.showErrorAndFocus(
+        'Enter a professional review comment before submitting.',
+        'adminRemark'
+      );
       return;
     }
 
     if (!this.selectedApplicationId) {
-      this.decisionMessage = 'No backend application is selected for review.';
-      this.decisionMessageType = 'error';
+      this.showErrorAndFocus('No application is selected for review.', 'reviewDecision');
       return;
     }
 
     if (!this.adminUserId) {
-      this.decisionMessage = 'Your admin login session could not be found. Please sign in again.';
-      this.decisionMessageType = 'error';
+      this.showErrorAndFocus(
+        'Your admin login session could not be found. Please sign in again.',
+        'reviewDecision'
+      );
       return;
     }
 
-    const nextStatusName = this.selectedReviewDecision;
+    const nextStatusName = this.getBackendStatusNameForDecision(
+      this.selectedReviewDecision
+    );
     const nextStatus = this.applicationStatuses.find(
       (status) => status.status_name === nextStatusName
     );
 
     if (!nextStatus) {
-      this.decisionMessage = `${nextStatusName} status was not found in the backend status list.`;
-      this.decisionMessageType = 'error';
+      this.showErrorAndFocus(
+        `${nextStatusName} status is not available in the status list.`,
+        'reviewDecision'
+      );
+      return;
+    }
+
+    if (this.selectedReviewDecision === 'Disputed' && !this.selectedApplication?.landDetailId) {
+      this.showErrorAndFocus(
+        'This application has no land detail to flag as disputed.',
+        'reviewDecision'
+      );
       return;
     }
 
     this.isSubmittingDecision = true;
 
-    this.apiService
+    const reviewRequest = this.apiService
       .reviewApplication(this.selectedApplicationId, {
         admin_id: this.adminUserId,
         new_status_id: nextStatus.status_id,
         comment: this.buildReviewComment(),
-      })
+      });
+
+    const saveRequest =
+      this.selectedReviewDecision === 'Disputed' && this.selectedApplication?.landDetailId
+        ? reviewRequest.pipe(
+            switchMap(() =>
+              forkJoin([
+                this.apiService.updateLandDetails(this.selectedApplication?.landDetailId || 0, {
+                  is_disputed: true,
+                }),
+                this.saveDisputeFlag(),
+              ])
+            ),
+            map(() => null)
+          )
+        : reviewRequest.pipe(map(() => null));
+
+    saveRequest
       .subscribe({
         next: () => {
-          this.selectedApplication.currentStatus = nextStatusName;
-          this.decisionMessage = `${nextStatusName} decision recorded for ${this.selectedApplication.reference}.`;
+          if (this.selectedApplication) {
+            this.selectedApplication.currentStatus = this.selectedReviewDecision;
+            if (this.selectedReviewDecision === 'Disputed') {
+              this.selectedApplication.verificationStatus = 'Disputed';
+              this.selectedApplication.disputeWarning =
+                'This parcel is marked as disputed and requires special review.';
+            }
+          }
+          this.decisionMessage = `${this.selectedReviewDecision} decision recorded for ${this.selectedApplication?.reference || 'the selected application'}.`;
           this.decisionMessageType = 'success';
           this.isSubmittingDecision = false;
-          this.refreshReviewRelatedData();
+          localStorage.removeItem('adminReviewApplicationId');
+          window.setTimeout(() => {
+            this.router.navigate(['/admin/applications']);
+          }, 600);
         },
         error: (error) => {
-          console.error('Failed to submit review decision:', error);
-          this.decisionMessage =
-            'Unable to save the review decision to the server. Please try again.';
-          this.decisionMessageType = 'error';
+          console.error('Failed to submit review decision.');
+          this.showErrorAndFocus(
+            'Unable to save the review decision to the server. Please try again.',
+            'reviewDecision'
+          );
           this.isSubmittingDecision = false;
         },
       });
+  }
+
+  getBackendStatusNameForDecision(decision: ReviewDecision): string {
+    if (decision === 'Disputed') {
+      return this.applicationStatuses.some(
+        (status) => status.status_name.toLowerCase() === 'queried'
+      )
+        ? 'Queried'
+        : 'Pending Review';
+    }
+
+    return decision;
+  }
+
+  saveDisputeFlag() {
+    const landDetailId = this.selectedApplication?.landDetailId || 0;
+    const flagReason = this.adminRemark.trim();
+
+    return this.selectedApplication?.disputeFlagId
+      ? this.apiService.updateDisputeFlag(this.selectedApplication.disputeFlagId, {
+          flag_reason: flagReason,
+          flag_status: 'Disputed',
+        })
+      : this.apiService.createDisputeFlag({
+          flag_reason: flagReason,
+          flag_status: 'Disputed',
+          land_detail: landDetailId,
+          flagged_by: this.adminUserId,
+        });
   }
 
   buildReviewComment(): string {
@@ -449,7 +666,7 @@ export class AdminReview {
       `Review Decision: ${this.selectedReviewDecision}`,
       `Document Review Status: ${this.selectedDocumentReviewStatus}`,
       `Verification Outcome: ${this.selectedVerificationOutcome}`,
-      `Admin Recommendation: ${recommendation}`,
+      `Administrative Recommendation: ${recommendation}`,
       `Review Comment: ${this.adminRemark.trim()}`,
     ].join('\n');
   }
@@ -463,12 +680,42 @@ export class AdminReview {
     }).subscribe({
       next: () => this.loadReviewApplication(),
       error: (error) => {
-        console.error('Review saved, but refresh failed:', error);
+        console.error('Review saved, but refresh failed.');
       },
     });
   }
 
   formatDate(value: string): string {
-    return new Date(value).toLocaleDateString();
+    return new Date(value).toLocaleString('en-GH', {
+      timeZone: 'Africa/Accra',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  }
+
+  showErrorAndFocus(message: string, elementId: string): void {
+    this.decisionMessage = '';
+    this.decisionMessageType = '';
+    this.appNotificationService.errorAndWait(message).then(() => {
+      this.focusElement(elementId);
+    });
+  }
+
+  focusElement(elementId: string): void {
+    const element = document.getElementById(elementId);
+    if (!element) {
+      return;
+    }
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.setTimeout(() => element.focus(), 250);
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
   }
 }

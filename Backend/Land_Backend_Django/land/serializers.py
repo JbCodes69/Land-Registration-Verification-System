@@ -172,7 +172,7 @@ class AuthLoginSerializer(serializers.Serializer):
         if user is None:
             raise serializers.ValidationError("Invalid email or password.")
 
-        if not user.is_active:
+        if user.is_active is False:
             raise serializers.ValidationError("This account is inactive.")
 
         if not check_password(password, user.password_hash):
@@ -198,9 +198,49 @@ class ApplicationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Applications
         fields = '__all__'
+        read_only_fields = [
+            "user",
+            "submitted_at",
+            "reviewed_at",
+            "reviewed_by",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class LandDetailsSerializer(serializers.ModelSerializer):
+    application_status = serializers.CharField(
+        source="application.status.status_name",
+        read_only=True,
+    )
+    public_verification_status = serializers.SerializerMethodField()
+
+    def get_public_verification_status(self, obj):
+        if obj.is_disputed:
+            return "Disputed"
+
+        resolved_dispute = obj.dispute_flags.filter(
+            flag_status__iexact="Resolved"
+        ).exists()
+        if resolved_dispute:
+            return "Resolved"
+
+        if obj.is_already_registered:
+            return "Registered"
+
+        status_name = ""
+        if obj.application_id and obj.application and obj.application.status:
+            status_name = obj.application.status.status_name or ""
+
+        normalized_status = status_name.strip().lower()
+        if normalized_status in {"approved", "registered", "verified"}:
+            return status_name
+
+        if normalized_status == "completed":
+            return "Verified"
+
+        return "Hidden"
+
     class Meta:
         model = LandDetails
         fields = '__all__'
@@ -231,7 +271,7 @@ class DocumentsSerializer(serializers.ModelSerializer):
     )
     uploaded_by = serializers.PrimaryKeyRelatedField(
         queryset=Users.objects.all(),
-        required=True,
+        required=False,
     )
     file = serializers.FileField(write_only=True, required=False)
     file_url = serializers.SerializerMethodField()
@@ -298,7 +338,13 @@ class DocumentsSerializer(serializers.ModelSerializer):
             "verification_status",
             "admin_remark",
         ]
-        read_only_fields = ["document_id", "file_path", "file_url", "upload_date"]
+        read_only_fields = [
+            "document_id",
+            "file_path",
+            "file_url",
+            "upload_date",
+            "uploaded_by",
+        ]
 
 
 class PaymentsSerializer(serializers.ModelSerializer):
@@ -322,6 +368,24 @@ class PaymentsSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    amount = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+    )
+    payment_status = serializers.CharField(read_only=True)
+    payment_reference = serializers.CharField(read_only=True)
+    payment_date = serializers.DateTimeField(read_only=True)
+    provider = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    mobile_money_number = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+    )
+    cardholder_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    card_number = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    expiry_date = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    cvv = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     def to_internal_value(self, data):
         data = data.copy()
@@ -330,23 +394,6 @@ class PaymentsSerializer(serializers.ModelSerializer):
         if "verification_log_id" not in data and "verification_log" in data:
             data["verification_log_id"] = data["verification_log"]
         return super().to_internal_value(data)
-
-    def validate_payment_status(self, value):
-        if not value:
-            return value
-        aliases = {
-            "paid": "Successful",
-            "success": "Successful",
-            "successful": "Successful",
-            "pending": "Pending",
-            "failed": "Failed",
-        }
-        normalized = aliases.get(value.strip().lower())
-        if normalized is None:
-            raise serializers.ValidationError(
-                "payment_status must be Pending, Successful, or Failed."
-            )
-        return normalized
 
     def validate_service_type(self, value):
         if not value:
@@ -370,6 +417,23 @@ class PaymentsSerializer(serializers.ModelSerializer):
             )
         return normalized
 
+    def validate_payment_method(self, value):
+        if not value:
+            raise serializers.ValidationError("payment_method is required.")
+
+        aliases = {
+            "mobile money": "Mobile Money",
+            "momo": "Mobile Money",
+            "card": "Card",
+            "card payment": "Card",
+        }
+        normalized = aliases.get(value.strip().lower())
+        if normalized is None:
+            raise serializers.ValidationError(
+                "payment_method must be Mobile Money or Card."
+            )
+        return normalized
+
     def validate(self, attrs):
         application = attrs.get("application")
         verification_log = attrs.get("verification_log")
@@ -388,12 +452,23 @@ class PaymentsSerializer(serializers.ModelSerializer):
             )
 
         service_type = attrs.get("service_type")
-        if not service_type and application:
-            service_type = application.workflow_type.workflow_name
-            attrs["service_type"] = self.validate_service_type(service_type)
-        elif not service_type and verification_log:
-            service_type = "Land Verification"
-            attrs["service_type"] = service_type
+        if application:
+            expected_service_type = self.validate_service_type(
+                application.workflow_type.workflow_name
+            )
+            if service_type and service_type != expected_service_type:
+                raise serializers.ValidationError({
+                    "service_type": (
+                        f"This application requires {expected_service_type} payment."
+                    )
+                })
+            attrs["service_type"] = expected_service_type
+        elif verification_log:
+            if service_type and service_type != "Land Verification":
+                raise serializers.ValidationError(
+                    "verification_log_id payments must use service_type Land Verification."
+                )
+            attrs["service_type"] = "Land Verification"
 
         if verification_log and attrs["service_type"] != "Land Verification":
             raise serializers.ValidationError(
@@ -411,8 +486,85 @@ class PaymentsSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 "amount": f"{attrs['service_type']} fee must be GHS {expected_amount}."
             })
+        attrs["amount"] = expected_amount
+
+        payment_method = attrs.get("payment_method")
+        if not payment_method:
+            raise serializers.ValidationError({
+                "payment_method": "payment_method is required."
+            })
+
+        if payment_method == "Mobile Money":
+            provider = attrs.get("provider", "").strip()
+            mobile_money_number = attrs.get("mobile_money_number", "").strip()
+            allowed_providers = {
+                "MTN Mobile Money",
+                "Telecel Cash",
+                "AirtelTigo Money",
+            }
+
+            if provider not in allowed_providers:
+                raise serializers.ValidationError({
+                    "provider": (
+                        "provider must be MTN Mobile Money, Telecel Cash, "
+                        "or AirtelTigo Money."
+                    )
+                })
+
+            compact_number = mobile_money_number.replace(" ", "")
+            if not (
+                compact_number.isdigit() and len(compact_number) == 10
+            ) and not (
+                compact_number.startswith("+233")
+                and compact_number[1:].isdigit()
+                and len(compact_number) == 13
+            ):
+                raise serializers.ValidationError({
+                    "mobile_money_number": (
+                        "Enter a valid 10-digit mobile money number or +233 number."
+                    )
+                })
+
+        if payment_method == "Card":
+            cardholder_name = attrs.get("cardholder_name", "").strip()
+            card_number = attrs.get("card_number", "").replace(" ", "")
+            expiry_date = attrs.get("expiry_date", "").strip()
+            cvv = attrs.get("cvv", "").strip()
+
+            if not cardholder_name:
+                raise serializers.ValidationError({
+                    "cardholder_name": "cardholder_name is required for card payments."
+                })
+
+            if not (card_number.isdigit() and 13 <= len(card_number) <= 19):
+                raise serializers.ValidationError({
+                    "card_number": "Enter a valid card number."
+                })
+
+            if not cvv.isdigit() or len(cvv) not in {3, 4}:
+                raise serializers.ValidationError({
+                    "cvv": "Enter a valid card security code."
+                })
+
+            if not expiry_date:
+                raise serializers.ValidationError({
+                    "expiry_date": "expiry_date is required for card payments."
+                })
 
         return attrs
+
+    def create(self, validated_data):
+        for field in [
+            "provider",
+            "mobile_money_number",
+            "cardholder_name",
+            "card_number",
+            "expiry_date",
+            "cvv",
+        ]:
+            validated_data.pop(field, None)
+
+        return super().create(validated_data)
 
     class Meta:
         model = Payments
@@ -428,11 +580,14 @@ class PaymentsSerializer(serializers.ModelSerializer):
             "payment_reference",
             "payment_date",
             "payment_method",
+            "provider",
+            "mobile_money_number",
+            "cardholder_name",
+            "card_number",
+            "expiry_date",
+            "cvv",
         ]
         read_only_fields = ["payment_id", "application", "verification_log"]
-        extra_kwargs = {
-            'payment_reference': {'required': False, 'allow_blank': True},
-        }
 
 
 class ReviewLogsSerializer(serializers.ModelSerializer):
@@ -445,6 +600,7 @@ class VerificationLogsSerializer(serializers.ModelSerializer):
     class Meta:
         model = VerificationLogs
         fields = '__all__'
+        read_only_fields = ["user", "checked_at"]
 
 
 class AuditLogsSerializer(serializers.ModelSerializer):
@@ -472,6 +628,7 @@ class DisputeFlagsSerializer(serializers.ModelSerializer):
     class Meta:
         model = DisputeFlags
         fields = '__all__'
+        read_only_fields = ["flagged_by"]
 
 
 class NotificationsSerializer(serializers.ModelSerializer):

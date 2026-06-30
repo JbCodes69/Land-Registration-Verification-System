@@ -55,7 +55,7 @@ export class SignupPage {
             ?.role_id || null;
       },
       error: (error) => {
-        console.error('Failed to load roles for signup:', error);
+        console.error('Failed to load roles for signup.');
       },
     });
   }
@@ -134,7 +134,7 @@ export class SignupPage {
         this.showSuccess('OTP sent to your email.');
       },
       error: (error) => {
-        console.error('Request OTP failed:', error?.error ?? error);
+        console.error('Request OTP failed.');
         this.showError(this.getBackendErrorMessage(error?.error));
       },
     });
@@ -164,7 +164,7 @@ export class SignupPage {
         this.showSuccess('OTP verified successfully.');
       },
       error: (error) => {
-        console.error('Verify OTP failed:', error?.error ?? error);
+        console.error('Verify OTP failed.');
         this.isOtpVerified = false;
         this.showError(this.getBackendErrorMessage(error?.error));
       },
@@ -218,7 +218,7 @@ export class SignupPage {
         }, 1200);
       },
       error: (error) => {
-        console.error('Signup failed:', error?.error ?? error);
+        console.error('Signup failed.');
         this.isSubmitting = false;
         this.showError(this.getBackendErrorMessage(error?.error));
       },

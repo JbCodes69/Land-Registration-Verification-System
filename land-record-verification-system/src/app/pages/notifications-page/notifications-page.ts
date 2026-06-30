@@ -36,6 +36,7 @@ interface ApplicantNotification {
   styleUrl: './notifications-page.css',
 })
 export class NotificationsPage {
+  isSidebarOpen: boolean = false;
   userName: string = 'User';
   currentUserId: number = 0;
   isLoading: boolean = false;
@@ -81,7 +82,7 @@ export class NotificationsPage {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load notifications:', error);
+        console.error('Failed to load notifications.');
         this.errorMessage = 'Unable to load notifications from the server.';
         this.isLoading = false;
       },
@@ -200,4 +201,11 @@ export class NotificationsPage {
   formatDateTime(value: string): string {
     return new Date(value).toLocaleString();
   }
-}
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

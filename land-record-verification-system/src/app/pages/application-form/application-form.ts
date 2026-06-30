@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { switchMap } from 'rxjs';
+import { map, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import {
@@ -15,10 +15,13 @@ import {
 } from '../../services/workflow-requirements.service';
 import {
   Application,
+  ApplicationParty,
   ApplicationStatus,
+  CreateApplicationPartyRequest,
   CreateApplicationRequest,
   CreateLandDetailRequest,
 } from '../../models/api.models';
+import { AppNotificationService } from '../../services/app-notification.service';
 
 @Component({
   selector: 'app-application-form',
@@ -27,6 +30,7 @@ import {
   styleUrl: './application-form.css',
 })
 export class ApplicationForm {
+  isSidebarOpen: boolean = false;
   // Placeholder user data for documentation/demo UI
   userName: string = 'User';
 
@@ -82,7 +86,8 @@ export class ApplicationForm {
     private apiService: ApiService,
     private authService: AuthService,
     private applicationDraftService: ApplicationDraftService,
-    private workflowRequirementsService: WorkflowRequirementsService
+    private workflowRequirementsService: WorkflowRequirementsService,
+    private appNotificationService: AppNotificationService
   ) {}
 
   ngOnInit(): void {
@@ -100,7 +105,7 @@ export class ApplicationForm {
 
     // If no workflow was selected, keep user on correct process path
     if (!this.selectedWorkflowTypeId) {
-      this.showError('Please select a workflow before filling the application form.');
+      this.showError('Please select a land service before filling the application form.');
     }
   }
 
@@ -131,7 +136,7 @@ export class ApplicationForm {
         this.applicationStatuses = statuses;
       },
       error: (error) => {
-        console.error('Failed to load application statuses:', error);
+        console.error('Failed to load application statuses.');
         this.showError('Unable to load application statuses. The form will use a default pending status.');
       },
     });
@@ -144,9 +149,12 @@ export class ApplicationForm {
   }
 
   // Shows error feedback
-  showError(message: string): void {
-    this.message = message;
-    this.messageType = 'error';
+  showError(message: string, elementId = 'application-form-main'): void {
+    this.message = '';
+    this.messageType = '';
+    this.appNotificationService.errorAndWait(message).then(() => {
+      this.focusElement(elementId);
+    });
   }
 
   // Shows success feedback
@@ -158,24 +166,36 @@ export class ApplicationForm {
   // Validates minimum required fields before moving forward
   validateForm(): boolean {
     if (!this.selectedWorkflowTypeId) {
-      this.showError('No workflow selected. Please return and select a workflow.');
+      this.showError(
+        'No land service selected. Please return and select a land service.',
+        'selected-service-section'
+      );
       return false;
     }
 
     if (!this.getCurrentUserId()) {
-      this.showError('Your login session could not be found. Please sign in again.');
+      this.showError(
+        'Your login session could not be found. Please sign in again.',
+        'applicant-full-name'
+      );
       return false;
     }
 
     const missingField = this.getMissingRequiredField();
 
     if (missingField) {
-      this.showError(`${missingField.label} is required for ${this.selectedWorkflowLabel || 'this workflow'}.`);
+      this.showError(
+        `${missingField.label} is required for ${this.selectedWorkflowLabel || 'this land service'}.`,
+        this.getFieldElementId(missingField.key)
+      );
       return false;
     }
 
     if (!this.applicationForm.declarationAccepted) {
-      this.showError('You must accept the declaration before continuing.');
+      this.showError(
+        'You must accept the declaration before continuing.',
+        'declaration-accepted'
+      );
       return false;
     }
 
@@ -249,16 +269,57 @@ export class ApplicationForm {
     return this.authService.getCurrentUserId() || 0;
   }
 
-  getPendingReviewStatusId(): number {
+  getDraftStatusId(): number {
+    const draftStatusNames = ['draft', 'pending submission', 'in progress'];
+    const draftStatus = this.applicationStatuses.find((status) =>
+      draftStatusNames.includes(status.status_name.toLowerCase())
+    );
+
     const pendingReview = this.applicationStatuses.find(
       (status) => status.status_name.toLowerCase() === 'pending review'
     );
 
-    const submitted = this.applicationStatuses.find(
-      (status) => status.status_name.toLowerCase() === 'submitted'
-    );
+    return draftStatus?.status_id || pendingReview?.status_id || this.applicationStatuses[0]?.status_id || 3;
+  }
 
-    return pendingReview?.status_id || submitted?.status_id || 3;
+  getFieldElementId(fieldKey: string): string {
+    const fieldIds: Record<string, string> = {
+      applicantFullName: 'applicant-full-name',
+      phoneNumber: 'applicant-phone-number',
+      emailAddress: 'applicant-email-address',
+      partyName: 'party-name',
+      partyRole: 'party-role',
+      partyAddress: 'party-address',
+      propertyLocation: 'property-location',
+      landSize: 'land-size',
+      parcelNumber: 'parcel-number',
+      plotNumber: 'plot-number',
+      sitePlanNumber: 'site-plan-number',
+      landDescription: 'land-description',
+      instrumentType: 'instrument-type',
+      instrumentDate: 'instrument-date',
+      ownerNameOnDocument: 'owner-name-on-document',
+      taxClearanceNumber: 'tax-clearance-number',
+      ownershipType: 'ownership-type',
+      currentOwner: 'current-owner',
+      newOwner: 'new-owner',
+      transferReason: 'transfer-reason',
+      consentPurpose: 'consent-purpose',
+      concurrencePurpose: 'concurrence-purpose',
+      titleNumber: 'title-number',
+    };
+
+    return fieldIds[fieldKey] || 'application-form-main';
+  }
+
+  focusElement(elementId: string): void {
+    const element = document.getElementById(elementId);
+    if (!element) {
+      return;
+    }
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.setTimeout(() => element.focus(), 250);
   }
 
   getWorkflowCodeSegment(): string {
@@ -288,9 +349,9 @@ export class ApplicationForm {
     return {
       user: this.getCurrentUserId(),
       workflow_type: this.selectedWorkflowTypeId || 1,
-      status: this.getPendingReviewStatusId(),
+      status: this.getDraftStatusId(),
       application_code: this.applicationReference,
-      remarks: 'Application submitted from Angular frontend.',
+      remarks: 'Application submitted through the land records portal.',
     };
   }
 
@@ -325,6 +386,43 @@ export class ApplicationForm {
     return details.join(' | ') || 'Not provided';
   }
 
+  buildApplicationPartyPayload(application: Application): CreateApplicationPartyRequest {
+    const contactDetails = [
+      this.applicationForm.phoneNumber ? `Phone: ${this.applicationForm.phoneNumber}` : '',
+      this.applicationForm.emailAddress ? `Email: ${this.applicationForm.emailAddress}` : '',
+      this.applicationForm.partyName ? `Other party: ${this.applicationForm.partyName}` : '',
+      this.applicationForm.currentOwner ? `Current owner: ${this.applicationForm.currentOwner}` : '',
+      this.applicationForm.newOwner ? `New owner: ${this.applicationForm.newOwner}` : '',
+    ].filter(Boolean).join(' | ');
+
+    return {
+      application: application.application_id,
+      party_name:
+        this.applicationForm.applicantFullName ||
+        this.applicationForm.partyName ||
+        'Applicant',
+      party_role: this.applicationForm.partyRole || 'Applicant',
+      contact_details: contactDetails || 'Not provided',
+      address: this.applicationForm.partyAddress || 'Not provided',
+    };
+  }
+
+  saveApplicationParty(application: Application) {
+    const payload = this.buildApplicationPartyPayload(application);
+
+    return this.apiService.getApplicationParties().pipe(
+      switchMap((parties: ApplicationParty[]) => {
+        const existingParty = parties.find(
+          (party) => Number(party.application) === Number(application.application_id)
+        );
+
+        return existingParty
+          ? this.apiService.updateApplicationParty(existingParty.party_id, payload)
+          : this.apiService.createApplicationParty(payload);
+      })
+    );
+  }
+
   saveLocalApplicationState(application: Application): void {
     this.currentApplicationId = application.application_id;
     this.applicationReference = application.application_code;
@@ -345,11 +443,14 @@ export class ApplicationForm {
   }
 
   // Resets the current form fields
-  resetForm(): void {
+  async resetForm(): Promise<void> {
     this.clearMessage();
 
-    const confirmed = window.confirm(
-      'Discard the current application form draft? This will clear the values entered on this page.'
+    const confirmed = await this.appNotificationService.confirm(
+      'Discard the current application form draft? This will clear the values entered on this page.',
+      'Reset form draft?',
+      'Continue',
+      'Cancel'
     );
 
     if (!confirmed) {
@@ -413,10 +514,15 @@ export class ApplicationForm {
         switchMap((application) => {
           this.saveLocalApplicationState(application);
           const landDetailsPayload = this.buildLandDetailsPayload(application);
-
-          return this.currentLandDetailId
+          const landDetailsRequest = this.currentLandDetailId
             ? this.apiService.updateLandDetails(this.currentLandDetailId, landDetailsPayload)
             : this.apiService.createLandDetails(landDetailsPayload);
+
+          return landDetailsRequest.pipe(
+            switchMap((landDetail) =>
+              this.saveApplicationParty(application).pipe(map(() => landDetail))
+            )
+          );
         })
       )
       .subscribe({
@@ -428,12 +534,21 @@ export class ApplicationForm {
           this.router.navigate(['/document-upload']);
         },
         error: (error) => {
-          console.error('Failed to create application or land details:', error);
+          console.error('Failed to create application or land details.');
           this.isSubmitting = false;
           this.showError(
-            'Unable to submit the application to the server. Please check the form details and try again.'
+            'Unable to submit the application to the server. Please check the form details and try again.',
+            'application-form-main'
           );
         },
       });
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
   }
 }

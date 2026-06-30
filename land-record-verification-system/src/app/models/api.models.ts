@@ -154,9 +154,9 @@ export interface DocumentRecord {
   upload_date: string;
   verification_status: string;
   admin_remark: string | null;
-  application: number;
+  application?: number;
   application_id?: number;
-  document_category: number;
+  document_category?: number;
   document_category_id?: number;
   uploaded_by: number;
 }
@@ -177,15 +177,66 @@ export interface Payment {
   payment_reference: string;
   payment_date: string;
   payment_method: string;
-  application: number;
+  service_type?: string;
+  application: number | null;
+  application_id?: number | null;
+  verification_log?: number | null;
+  verification_log_id?: number | null;
 }
 
 export interface CreatePaymentRequest {
-  application: number;
+  application_id?: number;
+  verification_log_id?: number;
+  service_type?: string;
   amount: string | number;
-  payment_status: string;
-  payment_reference?: string;
-  payment_method: string;
+  payment_method: 'Mobile Money' | 'Card';
+  provider?: 'MTN Mobile Money' | 'Telecel Cash' | 'AirtelTigo Money';
+  mobile_money_number?: string;
+  cardholder_name?: string;
+  card_number?: string;
+  expiry_date?: string;
+  cvv?: string;
+}
+
+export interface VerificationSearchRecord {
+  land_detail_id: number;
+  parcel_number: string;
+  plot_number: string;
+  property_location: string;
+  registered_owner: string;
+  service_type: string;
+  status: string;
+  last_updated: string;
+}
+
+export interface VerificationPaymentRequired {
+  detail: string;
+  payment_required: true;
+  verification_log_id: number;
+  land_detail_id: number;
+  service_type: 'Land Verification';
+  amount: string;
+}
+
+export interface VerificationReport extends VerificationSearchRecord {
+  payment_required: false;
+  application_id: number;
+  application_code: string;
+  application_status: string;
+  land_size: string | null;
+  site_plan_number: string | null;
+  instrument_type: string | null;
+  instrument_date: string | null;
+  land_description: string | null;
+  is_already_registered: boolean;
+  is_disputed: boolean;
+  registration_date: string;
+  created_at: string;
+  payment_reference: string | null;
+  payment_date: string | null;
+  dispute_status: string;
+  dispute_history: string[];
+  verification_note: string;
 }
 
 export interface ReviewApplicationRequest {

@@ -20,6 +20,7 @@ import {
   styleUrl: './user-dashboard.css'
 })
 export class UserDashboard {
+  isSidebarOpen: boolean = false;
   // Logged-in user display name
   userName: string = 'User';
   currentUserId: number = 0;
@@ -87,11 +88,6 @@ export class UserDashboard {
         payments,
         verificationLogs,
       }) => {
-        console.log('User dashboard applications response:', applications);
-        console.log('User dashboard statuses response:', statuses);
-        console.log('User dashboard notifications response:', notifications);
-        console.log('User dashboard verification logs response:', verificationLogs);
-
         const userApplications = applications.filter(
           (application) => application.user === this.currentUserId
         );
@@ -102,7 +98,7 @@ export class UserDashboard {
           (application) => application.application_id
         );
         const userPayments = payments.filter((payment) =>
-          applicationIds.includes(payment.application)
+          payment.application !== null && applicationIds.includes(payment.application)
         );
 
         this.totalApplications = userApplications.length;
@@ -160,7 +156,7 @@ export class UserDashboard {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load user dashboard data:', error);
+        console.error('Failed to load user dashboard data.');
         this.errorMessage = 'Unable to load dashboard data from the server.';
         this.isLoading = false;
       },
@@ -170,7 +166,7 @@ export class UserDashboard {
   getStatusName(application: Application, statuses: ApplicationStatus[]): string {
     return (
       statuses.find((status) => status.status_id === application.status)
-        ?.status_name || 'Unknown'
+        ?.status_name || 'Not specified'
     );
   }
 
@@ -178,7 +174,7 @@ export class UserDashboard {
     return (
       workflowTypes.find(
         (workflow) => workflow.workflow_type_id === application.workflow_type
-      )?.workflow_name || 'Unknown'
+      )?.workflow_name || 'Service not specified'
     );
   }
 
@@ -197,7 +193,11 @@ export class UserDashboard {
   }
 
   formatDate(value: string): string {
-    return new Date(value).toLocaleDateString();
+    return new Date(value).toLocaleString('en-GH', {
+      timeZone: 'Africa/Accra',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   }
 
   formatDateTime(value: string): string {
@@ -212,7 +212,14 @@ export class UserDashboard {
     return {
       record: verificationLog.search_term || `Land detail #${verificationLog.land_detail}`,
       dateTime: this.formatDateTime(verificationLog.checked_at),
-      result: verificationLog.result_summary || 'Verification check recorded',
+      result: verificationLog.result_summary || 'Land verification request recorded',
     };
   }
-}
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

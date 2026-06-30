@@ -31,7 +31,6 @@ export class LandingPage {
   onTermsToggle(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.termsAccepted = input.checked;
-    console.log('Terms accepted:', this.termsAccepted);
   }
 
   // Navigates user to the login page

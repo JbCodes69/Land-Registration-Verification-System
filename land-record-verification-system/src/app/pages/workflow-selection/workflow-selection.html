@@ -1,8 +1,26 @@
 <div class="min-h-screen w-full bg-[#f6f1eb]">
-  <div class="flex min-h-screen w-full overflow-hidden">
+  <button
+    type="button"
+    class="app-menu-button lg:hidden"
+    aria-label="Toggle navigation menu"
+    [attr.aria-expanded]="isSidebarOpen"
+    (click)="toggleSidebar()"
+  >
+    <span class="app-menu-button-lines" aria-hidden="true"></span>
+  </button>
+
+  <button
+    *ngIf="isSidebarOpen"
+    type="button"
+    class="app-sidebar-backdrop lg:hidden"
+    aria-label="Close navigation menu"
+    (click)="closeSidebar()"
+  ></button>
+
+  <div class="app-shell">
 
     <!-- Sidebar -->
-    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+    <aside class="app-sidebar bg-[#163d3b] text-white flex flex-col justify-between" [ngClass]="isSidebarOpen ? 'app-sidebar-open' : ''">
       <div>
         <div class="border-b border-white/10 px-6 py-6">
           <h1 class="text-2xl font-semibold">LRV System</h1>
@@ -14,6 +32,7 @@
             <li>
               <a
                 routerLink="/user-dashboard"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Dashboard
@@ -23,6 +42,7 @@
             <li>
               <a
                 routerLink="/workflow-selection"
+                (click)="closeSidebar()"
                 class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
               >
                 Service Selection
@@ -32,6 +52,7 @@
             <li>
               <a
                 routerLink="/application-form"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Application Form
@@ -41,6 +62,7 @@
             <li>
               <a
                 routerLink="/document-upload"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Document Upload
@@ -50,6 +72,7 @@
             <li>
               <a
                 routerLink="/application-status"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Application Status
@@ -59,6 +82,7 @@
             <li>
               <a
                 routerLink="/verification"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Verification
@@ -68,6 +92,7 @@
             <li>
               <a
                 routerLink="/notifications"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Notifications
@@ -84,7 +109,8 @@
 
         <div class="flex flex-col gap-2">
           <a
-            routerLink="/"
+            routerLink="/user-dashboard"
+                (click)="closeSidebar()"
             class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
           >
             Home
@@ -92,6 +118,7 @@
 
           <a
             routerLink="/login"
+                (click)="closeSidebar()"
             class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
           >
             Logout
@@ -101,12 +128,12 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+    <main class="app-main bg-[#f6f1eb] p-4 sm:p-6 md:p-8">
       <!-- Header -->
       <section class="mb-8">
         <h2 class="text-3xl font-semibold text-[#1f1f1f]">Select Service Type</h2>
         <p class="mt-2 text-sm text-gray-600">
-          Choose the land service workflow you want to begin. Your selection will determine the details and supporting documents required in the next stage.
+          Choose the land service you want to begin. Your selection will determine the details and supporting documents required in the next stage.
         </p>
       </section>
 
@@ -122,19 +149,19 @@
         </div>
       </section>
 
-      <!-- Workflow Options -->
+      <!-- Service Options -->
       <section class="mb-8 bg-white p-6 shadow-sm">
-        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Available Workflows</h3>
+        <h3 class="mb-2 text-xl font-semibold text-[#1f1f1f]">Available Land Services</h3>
         <p class="mb-5 text-sm text-gray-600">
-          Select one of the available workflows below to continue with your request.
+          Select one of the available land services below to continue with your request.
         </p>
 
         <div *ngIf="isLoading" class="mb-4 border border-black/10 bg-[#f6f1eb] px-4 py-4 text-sm text-gray-600">
-          Loading workflow types from the land records server...
+          Loading land services from the land records server...
         </div>
 
         <div *ngIf="!isLoading && workflowOptions.length === 0" class="mb-4 border border-black/10 bg-[#f6f1eb] px-4 py-4 text-sm text-gray-600">
-          No land service workflows available.
+          No land services are currently available.
         </div>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -172,30 +199,30 @@
         </div>
       </section>
 
-      <!-- Selected Workflow -->
+      <!-- Selected Service -->
       <section class="mb-8 bg-white p-6 shadow-sm">
-        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Selected Workflow</h3>
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Selected Land Service</h3>
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div class="border border-black/10 px-4 py-4">
-            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Workflow Name</p>
+            <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Service Type</p>
             <p class="text-base font-medium text-[#1f1f1f]">
-              {{ selectedWorkflowLabel || 'No workflow selected yet' }}
+              {{ selectedWorkflowLabel || 'No land service selected yet' }}
             </p>
           </div>
 
           <div class="border border-black/10 px-4 py-4">
             <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Next Step</p>
             <p class="text-base font-medium text-[#1f1f1f]">
-              {{ selectedWorkflowTypeId ? 'Proceed to application form' : 'Select a workflow first' }}
+              {{ selectedWorkflowTypeId ? 'Proceed to application form' : 'Select a land service first' }}
             </p>
           </div>
         </div>
       </section>
 
-      <!-- Workflow Summary -->
+      <!-- Service Summary -->
       <section class="mb-8 bg-white p-6 shadow-sm">
-        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Workflow Guidance</h3>
+        <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Service Descriptions</h3>
 
         <div class="grid grid-cols-1 gap-3 text-sm">
           <div
@@ -213,6 +240,7 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
           <a
             routerLink="/user-dashboard"
+                (click)="closeSidebar()"
             class="text-sm text-gray-700 underline underline-offset-4 hover:text-black"
           >
             Back to dashboard

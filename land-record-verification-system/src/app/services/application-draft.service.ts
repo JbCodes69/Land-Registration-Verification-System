@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DocumentRecord, Payment } from '../models/api.models';
+import { AppNotificationService } from './app-notification.service';
 
 export interface ApplicationDraftFormData {
   applicantFullName: string;
@@ -65,6 +66,8 @@ export class ApplicationDraftService {
     'applicationSubmissionStatus',
     'applicationDraftStatus',
   ];
+
+  constructor(private appNotificationService: AppNotificationService) {}
 
   getDraft(): ApplicationDraft {
     const storedDraft = this.readJson<ApplicationDraft>(sessionStorage.getItem(this.draftKey));
@@ -143,12 +146,17 @@ export class ApplicationDraftService {
     );
   }
 
-  confirmDiscardInProgress(): boolean {
+  async confirmDiscardInProgress(): Promise<boolean> {
     if (!this.hasInProgressDraft()) {
       return true;
     }
 
-    const confirmed = window.confirm(this.discardWarningMessage);
+    const confirmed = await this.appNotificationService.confirm(
+      this.discardWarningMessage,
+      'Discard application draft?',
+      'Continue',
+      'Cancel'
+    );
 
     if (confirmed) {
       this.clearDraft();

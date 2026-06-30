@@ -10,6 +10,7 @@ import {
   WorkflowRequirementsService,
 } from '../../services/workflow-requirements.service';
 import { DocumentCategory } from '../../models/api.models';
+import { AppNotificationService } from '../../services/app-notification.service';
 
 @Component({
   selector: 'app-document-upload',
@@ -18,6 +19,7 @@ import { DocumentCategory } from '../../models/api.models';
   styleUrl: './document-upload.css',
 })
 export class DocumentUpload {
+  isSidebarOpen: boolean = false;
   // Placeholder user data for documentation/demo UI
   userName: string = 'User';
 
@@ -44,7 +46,8 @@ export class DocumentUpload {
     private apiService: ApiService,
     private authService: AuthService,
     private applicationDraftService: ApplicationDraftService,
-    private workflowRequirementsService: WorkflowRequirementsService
+    private workflowRequirementsService: WorkflowRequirementsService,
+    private appNotificationService: AppNotificationService
   ) {}
 
   ngOnInit(): void {
@@ -65,7 +68,7 @@ export class DocumentUpload {
     this.loadDocumentCategories();
 
     if (!this.selectedWorkflow) {
-      this.showError('Please select a workflow and complete the application form first.');
+      this.showError('Please select a land service and complete the application form first.');
     }
 
     if (!this.currentApplicationId) {
@@ -92,7 +95,7 @@ export class DocumentUpload {
       error: (error) => {
         this.isLoadingCategories = false;
         if (error?.status !== 401 && error?.status !== 400) {
-          console.error('Failed to load document categories:', error);
+          console.error('Failed to load document categories.');
         }
         this.showError(this.getBackendErrorMessage(error));
       },
@@ -226,18 +229,21 @@ export class DocumentUpload {
     );
 
     if (missingRequiredDocument) {
-      this.showError(`${missingRequiredDocument.label} is required for ${this.selectedWorkflowLabel || 'this workflow'}.`);
+      this.showError(`${missingRequiredDocument.label} is required for ${this.selectedWorkflowLabel || 'this land service'}.`);
       return false;
     }
 
     return true;
   }
 
-  resetUploads(): void {
+  async resetUploads(): Promise<void> {
     this.clearMessage();
 
-    const confirmed = window.confirm(
-      'Discard the current document upload draft? This will clear saved document selections for this application.'
+    const confirmed = await this.appNotificationService.confirm(
+      'Discard the current document upload draft? This will clear saved document selections for this application.',
+      'Reset document draft?',
+      'Continue',
+      'Cancel'
     );
 
     if (!confirmed) {
@@ -325,7 +331,7 @@ export class DocumentUpload {
             this.router.navigate(['/payment']);
           },
           error: (refreshError) => {
-            console.error('Documents saved, but refresh failed:', refreshError);
+            console.error('Documents saved, but refresh failed.');
             this.isSubmitting = false;
             this.showSuccess('Documents uploaded successfully.');
             this.router.navigate(['/payment']);
@@ -334,11 +340,18 @@ export class DocumentUpload {
       },
       error: (error) => {
         if (error?.status !== 401 && error?.status !== 400) {
-          console.error('Failed to upload documents:', error);
+          console.error('Failed to upload documents.');
         }
         this.isSubmitting = false;
         this.showError(this.getBackendErrorMessage(error));
       },
     });
   }
-}
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

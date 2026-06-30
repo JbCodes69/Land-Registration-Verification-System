@@ -30,6 +30,7 @@ interface LandApplication {
   styleUrl: './application-status.css',
 })
 export class ApplicationStatus {
+  isSidebarOpen: boolean = false;
   userName: string = 'User';
   currentUserId: number = 0;
   isLoading: boolean = false;
@@ -77,7 +78,7 @@ export class ApplicationStatus {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load application status data:', error);
+        console.error('Failed to load application status data.');
         this.errorMessage = 'Unable to load application status data from the server.';
         this.isLoading = false;
       },
@@ -96,7 +97,7 @@ export class ApplicationStatus {
     const workflowName =
       workflowTypes.find(
         (workflow) => workflow.workflow_type_id === application.workflow_type
-      )?.workflow_name || 'Unknown Workflow';
+      )?.workflow_name || 'Service not specified';
     const payment = payments.find(
       (paymentRecord) => paymentRecord.application === application.application_id
     );
@@ -106,7 +107,7 @@ export class ApplicationStatus {
       workflowType: workflowName,
       dateSubmitted: this.formatDate(application.submitted_at),
       currentStatus: statusName,
-      adminRemark: application.remarks || 'No admin remark has been recorded yet.',
+      adminRemark: application.remarks || 'No administrative remark has been recorded yet.',
       paymentStatus: payment?.payment_status || 'Not Required',
     };
   }
@@ -152,6 +153,17 @@ export class ApplicationStatus {
   }
 
   formatDate(value: string): string {
-    return new Date(value).toLocaleDateString();
+    return new Date(value).toLocaleString('en-GH', {
+      timeZone: 'Africa/Accra',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   }
-}
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

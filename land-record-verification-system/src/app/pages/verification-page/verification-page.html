@@ -1,7 +1,25 @@
 <div class="min-h-screen w-full bg-[#f6f1eb]">
-  <div class="flex min-h-screen w-full overflow-hidden">
+  <button
+    type="button"
+    class="app-menu-button lg:hidden"
+    aria-label="Toggle navigation menu"
+    [attr.aria-expanded]="isSidebarOpen"
+    (click)="toggleSidebar()"
+  >
+    <span class="app-menu-button-lines" aria-hidden="true"></span>
+  </button>
+
+  <button
+    *ngIf="isSidebarOpen"
+    type="button"
+    class="app-sidebar-backdrop lg:hidden"
+    aria-label="Close navigation menu"
+    (click)="closeSidebar()"
+  ></button>
+
+  <div class="app-shell">
     <!-- Sidebar -->
-    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+    <aside class="app-sidebar bg-[#163d3b] text-white flex flex-col justify-between" [ngClass]="isSidebarOpen ? 'app-sidebar-open' : ''">
       <div>
         <div class="border-b border-white/10 px-6 py-6">
           <h1 class="text-2xl font-semibold">LRV System</h1>
@@ -13,6 +31,7 @@
             <li>
               <a
                 routerLink="/user-dashboard"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Dashboard
@@ -22,6 +41,7 @@
             <li>
               <a
                 routerLink="/workflow-selection"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Service Selection
@@ -31,6 +51,7 @@
             <li>
               <a
                 routerLink="/application-status"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Application Status
@@ -40,6 +61,7 @@
             <li>
               <a
                 routerLink="/verification"
+                (click)="closeSidebar()"
                 class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition"
               >
                 Verification
@@ -49,6 +71,7 @@
             <li>
               <a
                 routerLink="/notifications"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Notifications
@@ -58,6 +81,7 @@
             <li>
               <a
                 routerLink="/payment"
+                (click)="closeSidebar()"
                 class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
               >
                 Payments
@@ -74,7 +98,8 @@
 
         <div class="flex flex-col gap-2">
           <a
-            routerLink="/"
+            routerLink="/user-dashboard"
+                (click)="closeSidebar()"
             class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition"
           >
             Home
@@ -82,6 +107,7 @@
 
           <a
             routerLink="/login"
+                (click)="closeSidebar()"
             class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition"
           >
             Logout
@@ -91,7 +117,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+    <main class="app-main bg-[#f6f1eb] p-4 sm:p-6 md:p-8">
       <!-- Header -->
       <section class="mb-8">
         <h2 class="text-3xl font-semibold text-[#1f1f1f]">Verify Land Record</h2>
@@ -112,6 +138,18 @@
         </div>
       </section>
 
+      <section *ngIf="isLoadingDetails" class="mb-6">
+        <div class="border border-black/10 bg-white px-4 py-4 text-sm text-gray-600 shadow-sm">
+          Checking verification payment and loading land report...
+        </div>
+      </section>
+
+      <section *ngIf="detailsMessage" class="mb-6">
+        <div class="rounded-md bg-red-100 px-4 py-3 text-sm text-red-800">
+          {{ detailsMessage }}
+        </div>
+      </section>
+
       <!-- Search and Filters -->
       <section class="mb-8 bg-white p-6 shadow-sm">
         <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Search Criteria</h3>
@@ -125,6 +163,7 @@
               id="searchTerm"
               type="text"
               [(ngModel)]="searchTerm"
+              (keyup.enter)="searchRecords()"
               placeholder="Search by parcel number, plot number, location, or owner"
               class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]"
             />
@@ -147,7 +186,7 @@
 
           <div>
             <label for="workflowFilter" class="mb-2 block text-sm font-medium text-gray-700">
-              Workflow Source
+              Service Type
             </label>
             <select
               id="workflowFilter"
@@ -173,6 +212,15 @@
           >
             Clear Filters
           </button>
+
+          <button
+            type="button"
+            (click)="searchRecords()"
+            [disabled]="isLoading"
+            class="bg-[#163d3b] px-5 py-3 text-sm text-white hover:bg-black transition disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ isLoading ? 'Searching...' : 'Search Records' }}
+          </button>
         </div>
       </section>
 
@@ -182,15 +230,16 @@
           <div>
             <h3 class="text-xl font-semibold text-[#1f1f1f]">Verification Results</h3>
             <p class="mt-1 text-sm text-gray-600">
-              Results are shown for applicant guidance until official backend verification is connected.
+              Search results are provided from available land records for verification purposes.
             </p>
           </div>
 
           <a
             routerLink="/workflow-selection"
+                (click)="closeSidebar()"
             class="bg-[#163d3b] px-5 py-3 text-sm text-white hover:bg-black transition"
           >
-            Start Service
+            Begin Land Service
           </a>
         </div>
 
@@ -202,7 +251,7 @@
                 <th class="px-4 py-3 font-semibold">Plot Number</th>
                 <th class="px-4 py-3 font-semibold">Location</th>
                 <th class="px-4 py-3 font-semibold">Registered Owner</th>
-                <th class="px-4 py-3 font-semibold">Workflow</th>
+                <th class="px-4 py-3 font-semibold">Service</th>
                 <th class="px-4 py-3 font-semibold">Status</th>
                 <th class="px-4 py-3 font-semibold">Details</th>
               </tr>
@@ -240,16 +289,23 @@
                   <button
                     type="button"
                     (click)="openRecordDetails(record)"
-                    class="text-sm font-medium text-[#163d3b] underline underline-offset-4 hover:text-black"
+                    [disabled]="isLoadingDetails"
+                    class="text-sm font-medium text-[#163d3b] underline underline-offset-4 hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    View details
+                    {{ isLoadingDetails ? 'Checking...' : 'View details' }}
                   </button>
                 </td>
               </tr>
 
-              <tr *ngIf="filteredLandRecords.length === 0">
+              <tr *ngIf="!hasSearched">
                 <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-600">
-                  No matching land record found for the selected search criteria.
+                  Enter a parcel number, plot number, location, or owner name to search public land records.
+                </td>
+              </tr>
+
+              <tr *ngIf="hasSearched && filteredLandRecords.length === 0">
+                <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-600">
+                  No land record matches the selected verification criteria.
                 </td>
               </tr>
             </tbody>
@@ -272,7 +328,7 @@
           <div class="print-grid">
             <div class="print-row"><span class="print-label">Search Term</span><span class="print-value">{{ searchTerm || 'Not provided' }}</span></div>
             <div class="print-row"><span class="print-label">Status Filter</span><span class="print-value">{{ selectedStatus }}</span></div>
-            <div class="print-row"><span class="print-label">Workflow Filter</span><span class="print-value">{{ selectedWorkflow }}</span></div>
+            <div class="print-row"><span class="print-label">Service Filter</span><span class="print-value">{{ selectedWorkflow }}</span></div>
             <div class="print-row"><span class="print-label">Date</span><span class="print-value">{{ selectedRecord.lastUpdated }}</span></div>
           </div>
 
@@ -282,7 +338,7 @@
             <div class="print-row"><span class="print-label">Plot Number</span><span class="print-value">{{ selectedRecord.plotNumber }}</span></div>
             <div class="print-row"><span class="print-label">Location</span><span class="print-value">{{ selectedRecord.location }}</span></div>
             <div class="print-row"><span class="print-label">Registered Owner</span><span class="print-value">{{ selectedRecord.registeredOwner }}</span></div>
-            <div class="print-row"><span class="print-label">Workflow Source</span><span class="print-value">{{ selectedRecord.workflowSource }}</span></div>
+            <div class="print-row"><span class="print-label">Service Type</span><span class="print-value">{{ selectedRecord.workflowSource }}</span></div>
             <div class="print-row"><span class="print-label">Verification Result</span><span class="print-value">{{ selectedRecord.status }}</span></div>
             <div class="print-row"><span class="print-label">Dispute Status</span><span class="print-value">{{ selectedRecord.disputeStatus }}</span></div>
             <div class="print-row"><span class="print-label">Payment Reference</span><span class="print-value">{{ selectedRecord.paymentReference }}</span></div>
@@ -347,6 +403,26 @@
             </div>
 
             <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Land Size</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedReport?.land_size || 'Not specified' }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Site Plan Number</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedReport?.site_plan_number || 'Not specified' }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Instrument Type</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedReport?.instrument_type || 'Not specified' }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
+              <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Instrument Date</p>
+              <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedReport?.instrument_date ? formatDate(selectedReport?.instrument_date || '') : 'Not specified' }}</p>
+            </div>
+
+            <div class="border border-black/10 px-4 py-3">
               <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Registration Date</p>
               <p class="text-sm font-medium text-[#1f1f1f]">{{ selectedRecord.registrationDate }}</p>
             </div>
@@ -381,7 +457,7 @@
             <div class="border border-black/10 px-4 py-4">
               <h4 class="mb-3 text-base font-semibold text-[#1f1f1f]">Previous Ownership</h4>
               <p class="text-sm text-gray-700">
-                Previous ownership history is not available in this prototype.
+                Previous ownership history is not available for this record.
               </p>
             </div>
 
@@ -418,12 +494,7 @@
           </div>
 
           <div class="border border-black/5 px-4 py-3">
-            <p class="font-semibold text-[#1f1f1f]">Under Review</p>
-            <p class="mt-1 text-gray-600">A submitted request is still being reviewed by the land office.</p>
-          </div>
-
-          <div class="border border-black/5 px-4 py-3">
-            <p class="font-semibold text-[#1f1f1f]">Disputed / Flagged</p>
+            <p class="font-semibold text-[#1f1f1f]">Disputed</p>
             <p class="mt-1 text-gray-600">The record has a dispute or irregularity and should not proceed without admin clearance.</p>
           </div>
         </div>

@@ -115,7 +115,7 @@ export class LoginPage {
         }, 700);
       },
       error: (error) => {
-        console.error('Login failed:', error);
+        console.error('Login failed.');
         this.isSubmitting = false;
         this.showError(
           error?.error?.detail ||

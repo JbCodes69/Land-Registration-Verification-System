@@ -37,6 +37,7 @@ interface DisputeRecord {
   styleUrl: './admin-disputes.css',
 })
 export class AdminDisputes {
+  isSidebarOpen: boolean = false;
   adminName: string = 'Administrator';
   adminUserId: number = 0;
   isLoading: boolean = false;
@@ -106,7 +107,7 @@ export class AdminDisputes {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load dispute records:', error);
+        console.error('Failed to load dispute records.');
         this.errorMessage = 'Unable to load dispute records from the server.';
         this.isLoading = false;
       },
@@ -136,7 +137,7 @@ export class AdminDisputes {
       applicant: application
         ? users.find((user) => user.user_id === application.user)?.full_name ||
           `User #${application.user}`
-        : 'Not linked',
+        : 'Not available',
       disputeReason: flag.flag_reason,
       reportedDate: this.formatDate(flag.flagged_at),
       assignedOfficer:
@@ -169,12 +170,12 @@ export class AdminDisputes {
       applicant: application
         ? users.find((user) => user.user_id === application.user)?.full_name ||
           `User #${application.user}`
-        : 'Not linked',
+        : 'Not available',
       disputeReason: 'Land detail is marked as disputed.',
       reportedDate: this.formatDate(landDetail.updated_at),
       assignedOfficer: 'Unassigned',
       status: 'Disputed',
-      latestRemark: 'Derived from land detail dispute flag.',
+      latestRemark: 'Derived from the land detail dispute status.',
       userNotification: 'Applicant can be notified that the land record is flagged.',
     };
   }
@@ -256,7 +257,7 @@ export class AdminDisputes {
     }
 
     if (!this.adminRemark.trim()) {
-      this.actionMessage = 'Enter an admin remark before saving the dispute update.';
+      this.actionMessage = 'Enter an administrative remark before saving the dispute update.';
       this.actionMessageType = 'error';
       return;
     }
@@ -269,7 +270,7 @@ export class AdminDisputes {
 
     // TODO: Persist dispute status, remark, and notification preference to the backend API.
     if (!this.selectedDispute.landDetailId) {
-      this.actionMessage = 'This dispute is not linked to a backend land detail.';
+      this.actionMessage = 'This dispute has no associated land detail.';
       this.actionMessageType = 'error';
       return;
     }
@@ -316,7 +317,7 @@ export class AdminDisputes {
         this.refreshDisputeRelatedData();
       },
       error: (error) => {
-        console.error('Failed to save dispute update:', error);
+        console.error('Failed to save dispute update.');
         this.actionMessage =
           'Unable to save the dispute update to the server. Please try again.';
         this.actionMessageType = 'error';
@@ -332,12 +333,23 @@ export class AdminDisputes {
     }).subscribe({
       next: () => this.loadDisputeRecords(),
       error: (error) => {
-        console.error('Dispute saved, but refresh failed:', error);
+        console.error('Dispute saved, but refresh failed.');
       },
     });
   }
 
   formatDate(value: string): string {
-    return new Date(value).toLocaleDateString();
+    return new Date(value).toLocaleString('en-GH', {
+      timeZone: 'Africa/Accra',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   }
-}
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

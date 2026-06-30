@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
 import {
   Application,
   ApplicationParty,
@@ -26,6 +26,9 @@ import {
   SignupRequest,
   User,
   VerifyOtpRequest,
+  VerificationPaymentRequired,
+  VerificationReport,
+  VerificationSearchRecord,
   VerificationLog,
   WorkflowType,
 } from '../models/api.models';
@@ -37,10 +40,6 @@ export class ApiService {
   private readonly baseUrl = 'http://127.0.0.1:8000/api';
 
   constructor(private http: HttpClient) {}
-
-  private logResponse<T>(label: string) {
-    return tap<T>((response) => console.log(`${label} response:`, response));
-  }
 
   getRoles(): Observable<Role[]> {
     return this.http.get<Role[]>(`${this.baseUrl}/roles/`);
@@ -71,21 +70,15 @@ export class ApiService {
   }
 
   getWorkflowTypes(): Observable<WorkflowType[]> {
-    return this.http
-      .get<WorkflowType[]>(`${this.baseUrl}/workflow-types/`)
-      .pipe(this.logResponse('workflow types'));
+    return this.http.get<WorkflowType[]>(`${this.baseUrl}/workflow-types/`);
   }
 
   getApplicationStatuses(): Observable<ApplicationStatus[]> {
-    return this.http
-      .get<ApplicationStatus[]>(`${this.baseUrl}/application-statuses/`)
-      .pipe(this.logResponse('application statuses'));
+    return this.http.get<ApplicationStatus[]>(`${this.baseUrl}/application-statuses/`);
   }
 
   getApplications(): Observable<Application[]> {
-    return this.http
-      .get<Application[]>(`${this.baseUrl}/applications/`)
-      .pipe(this.logResponse('applications'));
+    return this.http.get<Application[]>(`${this.baseUrl}/applications/`);
   }
 
   getApplication(id: number): Observable<Application> {
@@ -104,10 +97,12 @@ export class ApiService {
     return this.http.post<Application>(`${this.baseUrl}/applications/${id}/review/`, data);
   }
 
+  completeApplication(id: number): Observable<Application> {
+    return this.http.post<Application>(`${this.baseUrl}/applications/${id}/complete/`, {});
+  }
+
   getLandDetails(): Observable<LandDetail[]> {
-    return this.http
-      .get<LandDetail[]>(`${this.baseUrl}/land-details/`)
-      .pipe(this.logResponse('land details'));
+    return this.http.get<LandDetail[]>(`${this.baseUrl}/land-details/`);
   }
 
   createLandDetails(data: CreateLandDetailRequest): Observable<LandDetail> {
@@ -118,6 +113,35 @@ export class ApiService {
     return this.http.patch<LandDetail>(`${this.baseUrl}/land-details/${id}/`, data);
   }
 
+  getVerificationSearchRecords(searchTerm: string = ''): Observable<VerificationSearchRecord[]> {
+    const params = searchTerm.trim()
+      ? { search: searchTerm.trim() }
+      : undefined;
+    return this.http.get<VerificationSearchRecord[]>(
+      `${this.baseUrl}/land-details/verification-search/`,
+      { params }
+    );
+  }
+
+  getVerificationReport(
+    landDetailId: number,
+    searchTerm: string = '',
+    verificationLogId: number | null = null
+  ): Observable<VerificationReport | VerificationPaymentRequired> {
+    const params: Record<string, string> = {};
+    if (searchTerm.trim()) {
+      params['search'] = searchTerm.trim();
+    }
+    if (verificationLogId) {
+      params['verificationLogId'] = String(verificationLogId);
+    }
+
+    return this.http.get<VerificationReport | VerificationPaymentRequired>(
+      `${this.baseUrl}/land-details/${landDetailId}/verification-report/`,
+      { params: Object.keys(params).length ? params : undefined }
+    );
+  }
+
   getApplicationParties(): Observable<ApplicationParty[]> {
     return this.http.get<ApplicationParty[]>(`${this.baseUrl}/application-parties/`);
   }
@@ -126,16 +150,16 @@ export class ApiService {
     return this.http.post<ApplicationParty>(`${this.baseUrl}/application-parties/`, data);
   }
 
+  updateApplicationParty(id: number, data: Partial<CreateApplicationPartyRequest>): Observable<ApplicationParty> {
+    return this.http.patch<ApplicationParty>(`${this.baseUrl}/application-parties/${id}/`, data);
+  }
+
   getDocumentCategories(): Observable<DocumentCategory[]> {
-    return this.http
-      .get<DocumentCategory[]>(`${this.baseUrl}/document-categories/`)
-      .pipe(this.logResponse('document categories'));
+    return this.http.get<DocumentCategory[]>(`${this.baseUrl}/document-categories/`);
   }
 
   getDocuments(): Observable<DocumentRecord[]> {
-    return this.http
-      .get<DocumentRecord[]>(`${this.baseUrl}/documents/`)
-      .pipe(this.logResponse('documents'));
+    return this.http.get<DocumentRecord[]>(`${this.baseUrl}/documents/`);
   }
 
   createDocument(data: CreateDocumentRequest): Observable<DocumentRecord> {
@@ -147,9 +171,7 @@ export class ApiService {
   }
 
   getPayments(): Observable<Payment[]> {
-    return this.http
-      .get<Payment[]>(`${this.baseUrl}/payments/`)
-      .pipe(this.logResponse('payments'));
+    return this.http.get<Payment[]>(`${this.baseUrl}/payments/`);
   }
 
   createPayment(data: CreatePaymentRequest): Observable<Payment> {
@@ -157,15 +179,11 @@ export class ApiService {
   }
 
   getNotifications(): Observable<Notification[]> {
-    return this.http
-      .get<Notification[]>(`${this.baseUrl}/notifications/`)
-      .pipe(this.logResponse('notifications'));
+    return this.http.get<Notification[]>(`${this.baseUrl}/notifications/`);
   }
 
   getDisputeFlags(): Observable<DisputeFlag[]> {
-    return this.http
-      .get<DisputeFlag[]>(`${this.baseUrl}/dispute-flags/`)
-      .pipe(this.logResponse('dispute flags'));
+    return this.http.get<DisputeFlag[]>(`${this.baseUrl}/dispute-flags/`);
   }
 
   createDisputeFlag(data: CreateDisputeFlagRequest): Observable<DisputeFlag> {
@@ -181,9 +199,7 @@ export class ApiService {
   }
 
   getVerificationLogs(): Observable<VerificationLog[]> {
-    return this.http
-      .get<VerificationLog[]>(`${this.baseUrl}/verification-logs/`)
-      .pipe(this.logResponse('verification logs'));
+    return this.http.get<VerificationLog[]>(`${this.baseUrl}/verification-logs/`);
   }
 
   getAuditLogs(): Observable<AuditLog[]> {

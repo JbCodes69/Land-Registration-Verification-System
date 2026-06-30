@@ -20,13 +20,14 @@ interface WorkflowOption {
   styleUrl: './workflow-selection.css',
 })
 export class WorkflowSelection {
+  isSidebarOpen: boolean = false;
   // Branding / display text
   appShortName: string = 'LRV';
 
-  pageHeroTitle: string = 'Choose the land service workflow';
+  pageHeroTitle: string = 'Select a land service';
 
   pageDescription: string =
-    'Select the workflow that matches the land-related service you want to begin. Your selection will determine the form structure and required supporting documents.';
+    'Select the land service that matches your request. Your selection will determine the form structure and required supporting documents.';
 
   systemFooterText: string =
     'Secure Web-Based Land Registration and Verification System';
@@ -77,13 +78,13 @@ export class WorkflowSelection {
         this.isLoading = false;
 
         if (this.workflowOptions.length === 0) {
-          this.showError('No land service workflows available.');
+          this.showError('No land services are currently available.');
         }
       },
       error: (error) => {
-        console.error('Failed to load workflow types:', error);
+        console.error('Failed to load land services.');
         this.isLoading = false;
-        this.showError('Unable to load workflow types from the server.');
+        this.showError('Unable to load land services from the server.');
       },
     });
   }
@@ -93,26 +94,21 @@ export class WorkflowSelection {
       workflow_type_id: workflow.workflow_type_id,
       value: workflow.workflow_name.toLowerCase().replace(/\s+/g, '-'),
       label: workflow.workflow_name,
-      description:
-        workflow.description || this.getDefaultWorkflowDescription(workflow.workflow_name),
+      description: this.getDefaultWorkflowDescription(workflow.workflow_name),
     };
   }
 
   getDefaultWorkflowDescription(workflowName: string): string {
     const descriptions: Record<string, string> = {
-      Registration:
-        'Begin a new land registration application with the required land and party details.',
-      'Transfer of Title':
-        'Submit a transfer-related application for change of ownership or interest in land.',
-      Concurrence:
-        'Start a concurrence request and provide the required supporting records and documents.',
-      Consent:
-        'Initiate a consent application and continue with the relevant legal and land details.',
+      Registration: 'Register a new land record.',
+      'Transfer of Title': 'Change ownership of an existing land record.',
+      Concurrence: 'Request official approval for land interest or allocation.',
+      Consent: 'Request permission to proceed with a land transaction.',
       'Land Verification':
-        'Verify land information using a parcel number, title number, location, or optional supporting reference.',
+        'Search a public land record before requesting the full verification report.',
     };
 
-    return descriptions[workflowName] || 'Continue with this land service workflow.';
+    return descriptions[workflowName] || 'Continue with this land service.';
   }
 
   restoreSelectedWorkflow(): void {
@@ -141,14 +137,17 @@ export class WorkflowSelection {
   }
 
   // Handles workflow selection
-  selectWorkflow(workflow: WorkflowOption): void {
+  async selectWorkflow(workflow: WorkflowOption): Promise<void> {
     this.clearMessage();
 
     const isChangingService =
       this.selectedWorkflowTypeId !== null &&
       this.selectedWorkflowTypeId !== workflow.workflow_type_id;
 
-    if (isChangingService && !this.applicationDraftService.confirmDiscardInProgress()) {
+    if (
+      isChangingService &&
+      !(await this.applicationDraftService.confirmDiscardInProgress())
+    ) {
       return;
     }
 
@@ -161,7 +160,7 @@ export class WorkflowSelection {
       selectedWorkflowLabel: workflow.label,
     });
 
-    this.showSuccess(`${workflow.label} workflow selected.`);
+    this.showSuccess(`${workflow.label} service selected.`);
   }
 
   // Moves the user to the application form if a workflow has been selected
@@ -169,10 +168,17 @@ export class WorkflowSelection {
     this.clearMessage();
 
     if (!this.selectedWorkflowTypeId) {
-      this.showError('Please select a workflow before continuing.');
+      this.showError('Please select a land service before continuing.');
       return;
     }
 
     this.router.navigate(['/application-form']);
   }
-}
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

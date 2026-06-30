@@ -1,7 +1,25 @@
 <div class="min-h-screen w-full bg-[#f6f1eb]">
-  <div class="flex min-h-screen w-full overflow-hidden">
+  <button
+    type="button"
+    class="app-menu-button lg:hidden"
+    aria-label="Toggle navigation menu"
+    [attr.aria-expanded]="isSidebarOpen"
+    (click)="toggleSidebar()"
+  >
+    <span class="app-menu-button-lines" aria-hidden="true"></span>
+  </button>
+
+  <button
+    *ngIf="isSidebarOpen"
+    type="button"
+    class="app-sidebar-backdrop lg:hidden"
+    aria-label="Close navigation menu"
+    (click)="closeSidebar()"
+  ></button>
+
+  <div class="app-shell">
     <!-- Sidebar -->
-    <aside class="w-full max-w-70 bg-[#163d3b] text-white flex flex-col justify-between">
+    <aside class="app-sidebar bg-[#163d3b] text-white flex flex-col justify-between" [ngClass]="isSidebarOpen ? 'app-sidebar-open' : ''">
       <div>
         <div class="border-b border-white/10 px-6 py-6">
           <h1 class="text-2xl font-semibold">LRV System</h1>
@@ -10,13 +28,13 @@
 
         <nav class="px-4 py-6">
           <ul class="space-y-2">
-            <li><a routerLink="/admin-dashboard" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Dashboard</a></li>
-            <li><a routerLink="/admin/applications" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Applications</a></li>
-            <li><a routerLink="/admin/review" class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition">Review Queue</a></li>
-            <li><a routerLink="/admin/verification" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Verification</a></li>
-            <li><a routerLink="/admin/disputes" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Disputes</a></li>
-            <li><a routerLink="/admin/logs" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Audit Logs</a></li>
-            <li><a routerLink="/admin/payments" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Payments</a></li>
+            <li><a routerLink="/admin-dashboard" (click)="closeSidebar()" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Dashboard</a></li>
+            <li><a routerLink="/admin/applications" (click)="closeSidebar()" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Applications</a></li>
+            <li><a routerLink="/admin/review" (click)="closeSidebar()" class="block rounded-md bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/15 transition">Review Queue</a></li>
+            <li><a routerLink="/admin/verification" (click)="closeSidebar()" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Verification</a></li>
+            <li><a routerLink="/admin/disputes" (click)="closeSidebar()" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Disputes</a></li>
+            <li><a routerLink="/admin/logs" (click)="closeSidebar()" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">System Audit Logs</a></li>
+            <li><a routerLink="/admin/payments" (click)="closeSidebar()" class="block rounded-md px-4 py-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition">Payments</a></li>
           </ul>
         </nav>
       </div>
@@ -27,14 +45,14 @@
         </div>
 
         <div class="flex flex-col gap-2">
-          <a routerLink="/" class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition">Home</a>
-          <a routerLink="/login" class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition">Logout</a>
+          <a routerLink="/admin-dashboard" (click)="closeSidebar()" class="rounded-md border border-white/20 px-4 py-3 text-center text-sm hover:bg-white/10 transition">Home</a>
+          <a routerLink="/login" (click)="closeSidebar()" class="rounded-md bg-white px-4 py-3 text-center text-sm font-medium text-[#163d3b] hover:bg-gray-200 transition">Logout</a>
         </div>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 bg-[#f6f1eb] p-6 md:p-8 overflow-y-auto">
+    <main class="app-main bg-[#f6f1eb] p-4 sm:p-6 md:p-8">
       <!-- Header -->
       <section class="mb-8">
         <div class="flex flex-wrap items-start justify-between gap-4">
@@ -45,7 +63,7 @@
             </p>
           </div>
 
-          <a routerLink="/admin/applications" class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition">
+          <a routerLink="/admin/applications" (click)="closeSidebar()" class="border border-black/15 px-5 py-3 text-sm text-gray-700 hover:bg-black hover:text-white transition">
             Back to Applications
           </a>
         </div>
@@ -67,20 +85,25 @@
         </div>
       </section>
 
+      <section *ngIf="!isLoading && !selectedApplication" class="mb-8 bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
+        No application selected for review. Open the Applications page and choose Review for an application.
+      </section>
+
+      <ng-container *ngIf="selectedApplication as application">
       <!-- Application Overview -->
       <section class="mb-8 bg-white p-6 shadow-sm">
         <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 class="text-xl font-semibold text-[#1f1f1f]">{{ selectedApplication.reference }}</h3>
-            <p class="mt-1 text-sm text-gray-600">{{ selectedApplication.workflowType }} application submitted on {{ selectedApplication.submittedDate }}</p>
+            <h3 class="text-xl font-semibold text-[#1f1f1f]">{{ application.reference }}</h3>
+            <p class="mt-1 text-sm text-gray-600">Service Type: {{ application.workflowType }} · Submitted on {{ application.submittedDate }}</p>
           </div>
 
           <div class="flex flex-wrap gap-2">
-            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStatusBadgeClass(selectedApplication.currentStatus)">
-              {{ selectedApplication.currentStatus }}
+            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getStatusBadgeClass(application.currentStatus)">
+              {{ application.currentStatus }}
             </span>
-            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getPaymentBadgeClass(selectedApplication.paymentStatus)">
-              {{ selectedApplication.paymentStatus }}
+            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" [ngClass]="getPaymentBadgeClass(application.paymentStatus)">
+              {{ application.paymentStatus }}
             </span>
           </div>
         </div>
@@ -88,15 +111,15 @@
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div class="border border-black/10 px-4 py-4">
             <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Applicant</p>
-            <p class="text-base font-medium text-[#1f1f1f]">{{ selectedApplication.applicantName }}</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ application.applicantName }}</p>
           </div>
           <div class="border border-black/10 px-4 py-4">
             <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Parcel Number</p>
-            <p class="text-base font-medium text-[#1f1f1f]">{{ selectedApplication.parcelNumber }}</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ application.parcelNumber }}</p>
           </div>
           <div class="border border-black/10 px-4 py-4">
             <p class="mb-2 text-xs uppercase tracking-wide text-gray-500">Verification Status</p>
-            <p class="text-base font-medium text-[#1f1f1f]">{{ selectedApplication.verificationStatus }}</p>
+            <p class="text-base font-medium text-[#1f1f1f]">{{ application.verificationStatus }}</p>
           </div>
         </div>
       </section>
@@ -106,19 +129,20 @@
         <div class="bg-white p-6 shadow-sm">
           <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Applicant Details</h3>
           <div class="grid grid-cols-1 gap-3 text-sm">
-            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Phone</p><p class="font-medium text-[#1f1f1f]">{{ selectedApplication.applicantPhone }}</p></div>
-            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Email</p><p class="font-medium text-[#1f1f1f]">{{ selectedApplication.applicantEmail }}</p></div>
-            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Address</p><p class="font-medium text-[#1f1f1f]">{{ selectedApplication.applicantAddress }}</p></div>
+            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Phone</p><p class="font-medium text-[#1f1f1f]">{{ application.applicantPhone }}</p></div>
+            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Email</p><p class="font-medium text-[#1f1f1f]">{{ application.applicantEmail }}</p></div>
+            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Party Role</p><p class="font-medium text-[#1f1f1f]">{{ application.applicantRole }}</p></div>
+            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Address</p><p class="font-medium text-[#1f1f1f]">{{ application.applicantAddress }}</p></div>
           </div>
         </div>
 
         <div class="bg-white p-6 shadow-sm">
           <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Land Details</h3>
           <div class="grid grid-cols-1 gap-3 text-sm">
-            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Plot Number</p><p class="font-medium text-[#1f1f1f]">{{ selectedApplication.plotNumber }}</p></div>
-            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Location</p><p class="font-medium text-[#1f1f1f]">{{ selectedApplication.location }}</p></div>
-            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Land Size / Use</p><p class="font-medium text-[#1f1f1f]">{{ selectedApplication.landSize }} / {{ selectedApplication.landUse }}</p></div>
-            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Instrument Type</p><p class="font-medium text-[#1f1f1f]">{{ selectedApplication.instrumentType }}</p></div>
+            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Plot Number</p><p class="font-medium text-[#1f1f1f]">{{ application.plotNumber }}</p></div>
+            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Location</p><p class="font-medium text-[#1f1f1f]">{{ application.location }}</p></div>
+            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Land Size / Use</p><p class="font-medium text-[#1f1f1f]">{{ application.landSize }} / {{ application.landUse }}</p></div>
+            <div class="border border-black/5 px-4 py-3"><p class="mb-1 text-xs uppercase tracking-wide text-gray-500">Instrument Type</p><p class="font-medium text-[#1f1f1f]">{{ application.instrumentType }}</p></div>
           </div>
         </div>
       </section>
@@ -143,22 +167,31 @@
                 <td class="px-4 py-4 font-medium text-[#1f1f1f]">{{ document.category }}</td>
                 <td class="px-4 py-4 text-gray-700">{{ document.fileName }}</td>
                 <td class="px-4 py-4">
-                  <img
-                    *ngIf="document.isImage && document.fileUrl; else documentLink"
-                    [src]="document.fileUrl"
-                    [alt]="document.fileName"
-                    class="h-20 w-28 border border-black/10 object-cover"
-                  />
-                  <ng-template #documentLink>
+                  <div *ngIf="document.fileUrl; else fileUnavailable" class="flex flex-col items-start gap-3">
                     <a
-                      *ngIf="document.fileUrl"
+                      *ngIf="document.isImage"
                       [href]="document.fileUrl"
                       target="_blank"
                       rel="noopener"
-                      class="text-sm font-medium text-[#163d3b] underline underline-offset-4"
+                      [attr.aria-label]="'Open ' + document.fileName"
                     >
-                      View Document
+                      <img
+                        [src]="document.fileUrl"
+                        [alt]="document.fileName"
+                        class="h-20 w-28 border border-black/10 object-cover hover:opacity-80 transition"
+                      />
                     </a>
+                    <a
+                      [href]="document.fileUrl"
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-flex bg-[#163d3b] px-3 py-2 text-xs font-semibold text-white hover:bg-black transition"
+                    >
+                      Open Document
+                    </a>
+                  </div>
+                  <ng-template #fileUnavailable>
+                    <span class="text-sm text-gray-500">File not available</span>
                   </ng-template>
                 </td>
                 <td class="px-4 py-4 text-gray-700">{{ document.uploadedDate }}</td>
@@ -171,7 +204,7 @@
 
               <tr *ngIf="submittedDocuments.length === 0">
                 <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-600">
-                  No submitted documents found.
+                  No supporting documents have been submitted for this application.
                 </td>
               </tr>
             </tbody>
@@ -184,7 +217,7 @@
         <h3 class="mb-4 text-xl font-semibold text-[#1f1f1f]">Administrative Review</h3>
 
         <div class="mb-5 border-l-4 border-amber-500 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-          {{ selectedApplication.disputeWarning }}
+          {{ application.disputeWarning }}
         </div>
 
         <div class="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -213,7 +246,7 @@
           </div>
 
           <div>
-            <label for="adminRecommendation" class="mb-2 block text-sm font-medium text-gray-700">Admin Recommendation</label>
+            <label for="adminRecommendation" class="mb-2 block text-sm font-medium text-gray-700">Administrative Recommendation</label>
             <select id="adminRecommendation" [(ngModel)]="selectedAdminRecommendation" class="w-full border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#163d3b]">
               <option value="">No recommendation selected</option>
               <option *ngFor="let recommendation of adminRecommendationOptions" [value]="recommendation">{{ recommendation }}</option>
@@ -234,7 +267,7 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3">
           <p class="text-sm text-gray-600">
-            The review decision will update the application status and generate the backend review log, notification, and audit log.
+            The review decision will update the application status and generate the review log, notification, and audit log.
           </p>
 
           <button
@@ -243,10 +276,11 @@
             [disabled]="isSubmittingDecision"
             class="bg-[#163d3b] px-6 py-3 text-sm text-white hover:bg-black transition disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {{ isSubmittingDecision ? 'Submitting Review...' : 'Submit Review' }}
+            {{ isSubmittingDecision ? 'Submitting Decision...' : 'Submit Administrative Decision' }}
           </button>
         </div>
       </section>
+      </ng-container>
     </main>
   </div>
 </div>

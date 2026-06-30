@@ -1,12 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import {
   Application,
   ApplicationStatus,
+  DisputeFlag,
+  LandDetail,
   Payment,
   User,
   WorkflowType,
@@ -19,6 +21,7 @@ import {
   styleUrl: './admin-dashboard.css'
 })
 export class AdminDashboard {
+  isSidebarOpen: boolean = false;
   // Logged-in admin display name
   adminName: string = 'Administrator';
   isLoading: boolean = false;
@@ -32,6 +35,7 @@ export class AdminDashboard {
 
   // Recent applications awaiting admin action
   recentApplications: Array<{
+    applicationId: number;
     reference: string;
     applicant: string;
     workflow: string;
@@ -52,7 +56,11 @@ export class AdminDashboard {
   verificationLogs: number = 0;
   pendingPayments: number = 0;
 
-  constructor(private apiService: ApiService, private authService: AuthService) {}
+  constructor(
+    private apiService: ApiService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.adminName = this.authService.getCurrentUser()?.full_name || this.adminName;
@@ -69,6 +77,7 @@ export class AdminDashboard {
       workflowTypes: this.apiService.getWorkflowTypes(),
       users: this.apiService.getUsers(),
       reviewLogs: this.apiService.getReviewLogs(),
+      landDetails: this.apiService.getLandDetails(),
       disputeFlags: this.apiService.getDisputeFlags(),
       payments: this.apiService.getPayments(),
       verificationLogs: this.apiService.getVerificationLogs(),
@@ -79,22 +88,31 @@ export class AdminDashboard {
         workflowTypes,
         users,
         reviewLogs,
+        landDetails,
         disputeFlags,
         payments,
         verificationLogs,
       }) => {
-        this.totalApplications = applications.length;
-        this.pendingReview = applications.filter((application) =>
+        const adminApplications = applications.filter((application) =>
+          this.isAdminVisibleApplication(application, statuses)
+        );
+
+        this.totalApplications = adminApplications.length;
+        this.pendingReview = adminApplications.filter((application) =>
           ['Submitted', 'Pending Review', 'Queried'].includes(
-            this.getStatusName(application, statuses)
+            this.getDisplayStatusName(application, statuses, landDetails, disputeFlags)
           )
         ).length;
-        this.flaggedDisputes = disputeFlags.length;
+        this.flaggedDisputes = adminApplications.filter(
+          (application) =>
+            this.getDisplayStatusName(application, statuses, landDetails, disputeFlags) ===
+            'Disputed'
+        ).length;
         this.completedPayments = payments.filter((payment) =>
           this.isCompletedPayment(payment)
         ).length;
 
-        this.recentApplications = applications
+        this.recentApplications = adminApplications
           .slice()
           .sort(
             (a, b) =>
@@ -103,11 +121,17 @@ export class AdminDashboard {
           )
           .slice(0, 5)
           .map((application) => ({
+            applicationId: application.application_id,
             reference: application.application_code,
             applicant: this.getApplicantName(application, users),
             workflow: this.getWorkflowName(application, workflowTypes),
             submittedDate: this.formatDate(application.submitted_at),
-            status: this.getStatusName(application, statuses),
+            status: this.getDisplayStatusName(
+              application,
+              statuses,
+              landDetails,
+              disputeFlags
+            ),
           }));
 
         this.verifiedRecords = verificationLogs.length;
@@ -133,7 +157,7 @@ export class AdminDashboard {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Failed to load admin dashboard data:', error);
+        console.error('Failed to load admin dashboard data.');
         this.errorMessage = 'Unable to load admin dashboard data from the server.';
         this.isLoading = false;
       },
@@ -143,16 +167,60 @@ export class AdminDashboard {
   getStatusName(application: Application, statuses: ApplicationStatus[]): string {
     return (
       statuses.find((status) => status.status_id === application.status)
-        ?.status_name || 'Unknown'
+        ?.status_name || 'Not specified'
     );
   }
 
-  getWorkflowName(application: Application, workflowTypes: WorkflowType[]): string {
-    return (
-      workflowTypes.find(
-        (workflow) => workflow.workflow_type_id === application.workflow_type
-      )?.workflow_name || 'Unknown'
+  getDisplayStatusName(
+    application: Application,
+    statuses: ApplicationStatus[],
+    landDetails: LandDetail[],
+    disputeFlags: DisputeFlag[]
+  ): string {
+    const baseStatus = this.getStatusName(application, statuses);
+    if (baseStatus.toLowerCase() === 'rejected') {
+      return 'Rejected';
+    }
+
+    const landDetail = landDetails.find(
+      (item) => item.application === application.application_id
     );
+    const hasActiveDispute =
+      !!landDetail &&
+      (landDetail.is_disputed ||
+        disputeFlags.some(
+          (flag) =>
+            Number(flag.land_detail) === Number(landDetail.land_detail_id) &&
+            (flag.flag_status || '').toLowerCase() !== 'resolved'
+        ));
+
+    return hasActiveDispute ? 'Disputed' : baseStatus;
+  }
+
+  getWorkflowName(application: Application, workflowTypes: WorkflowType[]): string {
+    const workflowTypeId = Number(application.workflow_type);
+    const workflowName =
+      workflowTypes.find(
+        (workflow) => Number(workflow.workflow_type_id) === workflowTypeId
+      )?.workflow_name || '';
+
+    return this.normalizeServiceType(workflowName);
+  }
+
+  normalizeServiceType(serviceName: string): string {
+    const normalizedServiceName = (serviceName || '').trim().toLowerCase();
+    const serviceNames: Record<string, string> = {
+      registration: 'Land Registration',
+      'land registration': 'Land Registration',
+      transfer: 'Transfer of Title',
+      'transfer of title': 'Transfer of Title',
+      concurrence: 'Concurrence',
+      consent: 'Consent',
+      verification: 'Land Verification',
+      'land verification': 'Land Verification',
+    };
+
+    return serviceNames[normalizedServiceName] || serviceName.trim() || 'Service type not available';
   }
 
   getApplicantName(application: Application, users: User[]): string {
@@ -177,7 +245,7 @@ export class AdminDashboard {
       return 'bg-yellow-100 text-yellow-700';
     }
 
-    if (status === 'Queried') {
+    if (status === 'Queried' || status === 'Disputed') {
       return 'bg-orange-100 text-orange-700';
     }
 
@@ -185,35 +253,33 @@ export class AdminDashboard {
   }
 
   formatDate(value: string): string {
-    return new Date(value).toLocaleDateString();
+    return new Date(value).toLocaleString('en-GH', {
+      timeZone: 'Africa/Accra',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   }
 
   logout(): void {
     this.authService.logout();
   }
 
-  // Placeholder navigation actions for future logic
-  openApplication(reference: string): void {
-    console.log('Open application:', reference);
+  openApplicationReview(applicationId: number): void {
+    localStorage.setItem('adminReviewApplicationId', String(applicationId));
+    this.router.navigate(['/admin/review']);
   }
 
-  openReviewQueue(): void {
-    console.log('Open review queue');
+  isAdminVisibleApplication(application: Application, statuses: ApplicationStatus[]): boolean {
+    const normalizedStatus = this.getStatusName(application, statuses).toLowerCase();
+    const hiddenStatuses = ['draft', 'pending submission', 'in progress'];
+
+    return !!application.submitted_at && !hiddenStatuses.includes(normalizedStatus);
   }
 
-  openVerificationModule(): void {
-    console.log('Open verification module');
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
   }
 
-  openDisputesModule(): void {
-    console.log('Open disputes module');
-  }
-
-  openAuditLogs(): void {
-    console.log('Open audit logs');
-  }
-
-  openPaymentsModule(): void {
-    console.log('Open payments module');
-  }
-}
+  closeSidebar(): void {
+    this.isSidebarOpen = false;
+  }}

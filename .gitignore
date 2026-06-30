@@ -23,3 +23,8 @@ media/
 # OS files
 .DS_Store
 Thumbs.db
+# Database dumps and cleanup scripts
+*.sql
+
+# Database dumps and cleanup scripts
+*.sql
